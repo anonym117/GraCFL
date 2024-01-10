@@ -1,0 +1,13 @@
+data-driven
+topo-driven
+ooc
+run_singularity
+log*
+logs/
+SBATCH*
+*.out
+run*
+compile*
+srun*
+test*
+inter*
