@@ -1,5 +1,6 @@
 #include <omp.h>
-#include "globals.hpp"
+#include "globals-bi.hpp"
+#include "globals-par.hpp"
 #include "grammar.hpp"
 
 #define TOTAL_THREADS 16
@@ -35,9 +36,9 @@ int main(int argc, char **argv)
 
 	ifstream infile(inputGraph);
 
-	vector<EdgeForReading2> edges;
+	vector<EdgeForReading> edges;
 	unordered_set<uint> nodes;
-	EdgeForReading2 newEdge;
+	EdgeForReading newEdge;
 	uint from, to;
 	string label;
 	while (infile >> newEdge.from)
@@ -79,8 +80,8 @@ int main(int argc, char **argv)
 		hashset[i] = new tbb::concurrent_unordered_set<ull>[grammar.labelSize];
 	}
 
-	tbb::concurrent_vector<EdgeForReading2> activeQueue;
-	tbb::concurrent_vector<EdgeForReading2> futureQueue;
+	tbb::concurrent_vector<EdgeForReading> activeQueue;
+	tbb::concurrent_vector<EdgeForReading> futureQueue;
 
 	cout << "#nodes " << num_nodes << endl;
 	cout << "SF::#nodes " << nodes.size() << endl;
@@ -139,7 +140,7 @@ int main(int argc, char **argv)
 				edgeVecs[grammar.grammar1[l][0]][i].push_back(i);
 				inEdgeVecs[grammar.grammar1[l][0]][i].push_back(i);
 
-				activeQueue.push_back(EdgeForReading2(i, i, grammar.grammar1[l][0]));
+				activeQueue.push_back(EdgeForReading(i, i, grammar.grammar1[l][0]));
 
 				newEdgeCounter++;
 			}
@@ -155,7 +156,7 @@ int main(int argc, char **argv)
 #pragma omp parallel for schedule(static) num_threads(TOTAL_THREADS)
 		for (uint z = 0; z < activeQueue.size(); z++)
 		{
-			EdgeForReading2 currEdge = activeQueue[z];
+			EdgeForReading currEdge = activeQueue[z];
 
 			// for each grammar rule like A --> B
 			for (uint g = 0; g < grammar.grammar2index[currEdge.label].size(); g++)
@@ -165,7 +166,7 @@ int main(int argc, char **argv)
 				if (hashset[currEdge.from][leftLabel].find(currEdge.to) == hashset[currEdge.from][leftLabel].end())
 				{
 					hashset[currEdge.from][leftLabel].insert(currEdge.to);
-					futureQueue.push_back(EdgeForReading2(currEdge.from, currEdge.to, grammar.grammar2index[currEdge.label][g]));
+					futureQueue.push_back(EdgeForReading(currEdge.from, currEdge.to, grammar.grammar2index[currEdge.label][g]));
 				}
 			}
 
@@ -187,7 +188,7 @@ int main(int argc, char **argv)
 					if (hashset[currEdge.from][A].find(nbr) == hashset[currEdge.from][A].end())
 					{
 						hashset[currEdge.from][A].insert(nbr);
-						futureQueue.push_back(EdgeForReading2(currEdge.from, nbr, A));
+						futureQueue.push_back(EdgeForReading(currEdge.from, nbr, A));
 					}
 				}
 			}
@@ -207,7 +208,7 @@ int main(int argc, char **argv)
 					if (hashset[inNbr][A].find(currEdge.to) == hashset[inNbr][A].end())
 					{
 						hashset[inNbr][A].insert(currEdge.to);
-						futureQueue.push_back(EdgeForReading2(inNbr, currEdge.to, A));
+						futureQueue.push_back(EdgeForReading(inNbr, currEdge.to, A));
 						// newEdgeCounter++;
 					}
 				}
@@ -225,14 +226,14 @@ int main(int argc, char **argv)
 #pragma omp parallel for schedule(static) num_threads(TOTAL_THREADS)
 		for (uint z = 0; z < futureQueue.size(); z++)
 		{
-			EdgeForReading2 edge = futureQueue[z];
+			EdgeForReading edge = futureQueue[z];
 
 			edgeVecs[edge.label][edge.from].push_back(edge.to);
 			inEdgeVecs[edge.label][edge.to].push_back(edge.from);
 		}
 
 		activeQueue.swap(futureQueue);
-		tbb::concurrent_vector<EdgeForReading2>().swap(futureQueue);
+		tbb::concurrent_vector<EdgeForReading>().swap(futureQueue);
 	} while (!finished);
 
 	finish = std::chrono::system_clock::now();

@@ -28,9 +28,6 @@
 #include <algorithm>
 #include <stdint.h>
 
-#include "tbb/concurrent_vector.h"
-#include "tbb/concurrent_queue.h"
-#include "tbb/concurrent_unordered_set.h"
 
 using namespace std;
 
@@ -70,16 +67,16 @@ struct Edge
 // SF:: Keeps the source, destination vertex and label of an edge
 // For label the original label string is not saved. Instead the value from
 // hashSym map is saved, hashMap[label] = value;
-struct EdgeForReading
+struct EdgeForReading2
 {
   uint from;
   uint to;
   uint label;
   uint contextID;
 
-  EdgeForReading() {}
+  EdgeForReading2() {}
 
-  EdgeForReading(uint from, uint to, uint label, int contextID)
+  EdgeForReading2(uint from, uint to, uint label, int contextID)
   {
     this->from = from;
     this->to = to;
@@ -88,15 +85,15 @@ struct EdgeForReading
   }
 };
 
-struct EdgeForReading2
+struct EdgeForReading
 {
   uint from;
   uint to;
   uint label;
 
-  EdgeForReading2() {}
+  EdgeForReading() {}
 
-  EdgeForReading2(uint from, uint to, uint label)
+  EdgeForReading(uint from, uint to, uint label)
   {
     this->from = from;
     this->to = to;
@@ -162,18 +159,6 @@ ull countEdge(vector<vector<unordered_set<ull>>> &hashset, uint hashsetSize, uin
   return size;
 }
 
-ull countEdge(tbb::concurrent_unordered_set<ull> **hashset, uint hashsetSize, uint grammarLabelSize)
-{
-  ull size = 0;
-  for (uint i = 0; i < hashsetSize; i++)
-  {
-    for (uint j = 0; j < grammarLabelSize; j++)
-    {
-      size += hashset[i][j].size();
-    }
-  }
-  return size;
-}
 
 
 // holds the OLD, NEW, FUTURE edges
