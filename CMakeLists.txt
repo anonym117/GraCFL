@@ -50,10 +50,44 @@ if(NOT JEMALLOC_LIB)
     # Create a target for jemalloc
     add_custom_target(libjemalloc DEPENDS ${JEMALLOC_LIB})
 
-    # Set jemalloc library path
-    set(JEMALLOC_LIBS ${JEMALLOC_LIB} pthread dl)  # Added dl for dlsym
+    # Set jemalloc library path and link pthread, dl
+    set(JEMALLOC_LIBS ${JEMALLOC_LIB} pthread dl)
 else()
     set(JEMALLOC_LIBS ${JEMALLOC_LIB})
+endif()
+
+# Try to find TBB
+find_package(TBB)
+
+# If TBB is not found, download and build it using ExternalProject
+if(NOT TBB_FOUND)
+    message(STATUS "TBB not found, downloading and building it...")
+
+    ExternalProject_Add(
+        tbb
+        GIT_REPOSITORY https://github.com/oneapi-src/oneTBB.git
+        GIT_TAG v2021.13.0  # Specify the version you want to use
+        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/tbb_install -DTBB_TEST=OFF  # Disable tests
+        BUILD_COMMAND ${CMAKE_COMMAND} --build . --target install
+        INSTALL_COMMAND ""
+        BUILD_IN_SOURCE 1
+        PREFIX ${CMAKE_BINARY_DIR}/_deps/tbb
+    )
+
+    # Set the path to the built TBB library and include directories (using lib64)
+    set(TBB_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/tbb_install/include")
+    set(TBB_LIB "${CMAKE_BINARY_DIR}/tbb_install/lib64/libtbb.so")
+    set(TBB_MALLOC_LIB "${CMAKE_BINARY_DIR}/tbb_install/lib64/libtbbmalloc.so")
+    set(TBB_MALLOC_PROXY_LIB "${CMAKE_BINARY_DIR}/tbb_install/lib64/libtbbmalloc_proxy.so")
+
+    include_directories(${TBB_INCLUDE_DIRS})
+
+    # Create a target for TBB
+    add_custom_target(libTBB DEPENDS ${TBB_LIB} ${TBB_MALLOC_LIB} ${TBB_MALLOC_PROXY_LIB})
+else()
+    set(TBB_LIB TBB::tbb)
+    set(TBB_MALLOC_LIB TBB::tbbmalloc)
+    set(TBB_MALLOC_PROXY_LIB TBB::tbbmalloc_proxy)
 endif()
 
 # Find all .cpp files in the src directory
@@ -80,5 +114,15 @@ foreach(CPP_FILE ${CPP_FILES})
     
     # Link jemalloc, pthread, and dl to the executable
     target_link_libraries(${EXE_NAME} PRIVATE ${JEMALLOC_LIBS})
+
+    # If the executable is dependent on TBB, link all TBB-related libraries
+    if(${EXE_NAME} STREQUAL "e-centric-bi-grammar_driven-parallel")  # Replace with actual executable name
+        if(TBB_FOUND)
+            target_link_libraries(${EXE_NAME} PRIVATE TBB::tbb TBB::tbbmalloc TBB::tbbmalloc_proxy)
+        else()
+            add_dependencies(${EXE_NAME} libTBB)
+            target_link_libraries(${EXE_NAME} PRIVATE ${TBB_LIB} ${TBB_MALLOC_LIB} ${TBB_MALLOC_PROXY_LIB})  # Link all TBB-related libs from lib64
+        endif()
+    endif()
 endforeach()
 

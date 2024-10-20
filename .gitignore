@@ -11,3 +11,4 @@ compile*
 srun*
 test*
 inter*
+build/*
