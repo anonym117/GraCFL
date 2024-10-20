@@ -6,25 +6,24 @@
 #define TOTAL_THREADS 16
 
 /*
- * E-centric w/ rule-idx and label-idx-adj_list
- * new edge worklist, iterative, standard
- * Parallel, concurrent vector, unordered_set used from
- * Intel tbb library
+ * E-centric-BI Parallel
+ * Grammar Driven
+ * Label and vertex indexed adjacency lists
+ * Uses concurrent datastructures from Intel tbb library
  */
 
 int main(int argc, char **argv)
 {
 
-	// bool debug = true;
-	// Get the graph file path and grammar file path from command line argument
+	// Get the graph file path and grammar file path from command line argument: output file path is optional
 	if (argc == 1)
 	{
-		std::cout << "Please provide the graph file path and grammar file path. For example, ./topo-driven <graph_file> <grammar_file>" << std::endl;
+		std::cout << "Please provide the graph file path and grammar file path. For example, ./exc.out <graph_file> <grammar_file>" << endl;
 		return 0;
 	}
 	else if (argc == 2)
 	{
-		std::cout << "Please provide the grammar file path. For example, ./topo-driven <graph_file> <grammar_file>" << std::endl;
+		std::cout << "Please provide the grammar file path. For example, ./exc.out <graph_file> <grammar_file>" << endl;
 		return 0;
 	}
 

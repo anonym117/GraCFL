@@ -2,7 +2,7 @@
 #include "grammar.hpp"
 
 /*
- * E-centric-BI w/
+ * E-centric-BI
  * Grammar driven
  * Label and vertex indexed adjacency lists
  */
@@ -11,16 +11,15 @@
 
 int main(int argc, char **argv)
 {
-
 	// Get the graph file path and grammar file path from command line argument: output file path is optional
 	if (argc == 1)
 	{
-		std::cout << "Please provide the graph file path and grammar file path. For example, ./exc.out <graph_file> <grammar_file>" << endl;
+		std::cout << "Please provide the graph file path and grammar file path. For example, ./exc.out <graph_file> <grammar_file>" << std::endl;
 		return 0;
 	}
 	else if (argc == 2)
 	{
-		std::cout << "Please provide the grammar file path. For example, ./exc.out <graph_file> <grammar_file>" << endl;
+		std::cout << "Please provide the grammar file path. For example, ./exc.out <graph_file> <grammar_file>" << std::endl;
 		return 0;
 	}
 
@@ -120,7 +119,7 @@ int main(int argc, char **argv)
 	bool finished; // fixed-point iteration flag
 	int itr = 0; // Iteration counter for fixed-point iteration
 
-	cout << "Start Calculations...\n";
+	std::cout << "Start Calculations...\n";
 	std::chrono::time_point<std::chrono::system_clock> start, finish;
 	start = std::chrono::system_clock::now();
 
@@ -145,7 +144,7 @@ int main(int argc, char **argv)
 	do
 	{
 		itr++;
-		cout << "Iteration " << itr << endl;
+		std::cout << "Iteration " << itr << std::endl;
 
 		while (!activeQueue.empty())
 		{
@@ -236,7 +235,7 @@ int main(int argc, char **argv)
 	std::cout << "Calculation Done!" << std::endl;
 
 	uint totalNewEdgeCount = countEdge(hashset, num_nodes, grammar.labelSize) - initialEdgeCount;
-	
+
 	// Write output to a file
 	// writeOutputs(OUTPUT_FILE_PATH, hashset);
 
