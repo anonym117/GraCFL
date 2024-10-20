@@ -4,8 +4,8 @@
 /***
  * E-centric (forward, sliding ptrs, grammar driven)
  * Grammar driven
- * One buffer list instead of three for OLD, NEW, and FUTURE edges
- * Buffer struct (adjcency list is made with this struct) holds the pointes for the OLD, NEW, and FUTURE edges in the single buffer list
+ * One BufferEdge list instead of three for OLD, NEW, and FUTURE edges
+ * BufferEdge struct (adjcency list is made with this struct) holds the pointes for the OLD, NEW, and FUTURE edges in the single BufferEdge list
  * Check the Future edge flag whenever an edge is created
  */
 
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
     std::cout << "Start initializing the lists, hashset and worklists ..." << std::endl;
 
     // level-1: vertex ID, level-2: NEW, OLD, FUTURE pointers and outgoing edges
-    std::vector<std::vector<Buffer>> edgeVecs(grammar.labelSize, std::vector<Buffer>(num_nodes));
+    std::vector<std::vector<BufferEdge>> edgeVecs(grammar.labelSize, std::vector<BufferEdge>(num_nodes));
     std::vector<std::vector<std::unordered_set<ull>>> hashset(num_nodes, std::vector<std::unordered_set<ull>>(grammar.labelSize, unordered_set<ull>()));
     std::queue<EdgeForReading> newWorklist;
     std::queue<EdgeForReading> futureNewWorklist;
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
     for (uint i = 0; i < num_edges; i++)
     {
         edgeVecs[edges[i].label][edges[i].from].vertexList.push_back(edges[i].to);
-        // update the buffer pointers
+        // update the BufferEdge pointers
         edgeVecs[edges[i].label][edges[i].from].NEW_END++;
         // insert edge into the hashset
         hashset[edges[i].from][edges[i].label].insert(edges[i].to);

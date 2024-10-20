@@ -175,7 +175,7 @@ struct Buffer2
   Buffer2() {}
 };
 
-struct Buffer
+struct BufferEdge
 {
   // OLD_START = 0;
   // NEW_START = OLD_END;
@@ -187,6 +187,19 @@ struct Buffer
   vector<int> vertexList;
   // this srcV fields keeps the srcV, it works as indexToSrcMap
   int srcV = -1;
+
+  BufferEdge() {}
+};
+
+struct Buffer
+{
+  // OLD_START = 0;
+  // NEW_START = OLD_END;
+  // FUTURE_START = NEW_END;
+  // FUTURE_END = vertexList.size()
+  uint OLD_END = 0;
+  uint NEW_END = 0;
+  vector<OutEdge> vertexList;
 
   Buffer() {}
 };
@@ -234,6 +247,31 @@ struct EdgeListBuffer
   vector<int> newEdgeIndexList;
 
   EdgeListBuffer() {}
+};
+
+struct UniBuffer
+{
+  // level-1: vertex ID, level-2: NEW, OLD, FUTURE pointers and incoming edges
+  vector<Buffer> inEdgeVecs;
+  // level-1: vertex ID, level-2: NEW, OLD, FUTURE pointers and outgoing edges
+  vector<Buffer> edgeVecs;
+
+  UniBuffer() {}
+};
+
+struct CombinedBuffer
+{
+  // OLD_START = 0;
+  // NEW_START = OLD_END;
+  // FUTURE_START = NEW_END;
+  // FUTURE_END = vertexList.size()
+  uint OLD_END_OUT = 0;
+  uint NEW_END_OUT = 0;
+  uint OLD_END_IN = 0;
+  uint NEW_END_IN = 0;
+  vector<OutEdge> outVertexList;
+  vector<OutEdge> inVertexList;
+  CombinedBuffer() {}
 };
 
 struct hashFunction
