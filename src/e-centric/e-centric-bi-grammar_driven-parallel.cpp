@@ -19,28 +19,37 @@ int main(int argc, char **argv)
 	// Get the graph file path and grammar file path from command line argument
 	if (argc == 1)
 	{
-		cout << "Please provide the graph file path and grammar file path. For example, ./topo-driven <graph_file> <grammar_file>" << endl;
+		std::cout << "Please provide the graph file path and grammar file path. For example, ./topo-driven <graph_file> <grammar_file>" << std::endl;
 		return 0;
 	}
 	else if (argc == 2)
 	{
-		cout << "Please provide the grammar file path. For example, ./topo-driven <graph_file> <grammar_file>" << endl;
+		std::cout << "Please provide the grammar file path. For example, ./topo-driven <graph_file> <grammar_file>" << std::endl;
 		return 0;
 	}
 
-	const string inputGraph = argv[1];
-	Grammar grammar(argv[2]);
+	std::cout << "-----------START----------" << std::endl;
+	std::cout << "--------------------------" << std::endl;
+
+	const std::string inputGraph = argv[1];
+	std::cout << "GraphFile:\t" << inputGraph << std::endl;
+
+	std::string grammarFilePath = argv[2];
+	std::cout << "GrammarFile:\t" << grammarFilePath << std::endl;
+	std::cout << "--------------------------" << std::endl;
+
+	Grammar grammar(grammarFilePath); // Read grammar
 
 	uint num_nodes = 0;
 	uint num_edges = 0;
 
-	ifstream infile(inputGraph);
+	std::ifstream infile(inputGraph);
 
-	vector<EdgeForReading> edges;
-	unordered_set<uint> nodes;
+	std::vector<EdgeForReading> edges;
+	std::unordered_set<uint> nodes;
 	EdgeForReading newEdge;
 	uint from, to;
-	string label;
+	std::string label;
 	while (infile >> newEdge.from)
 	{
 		infile >> newEdge.to;
@@ -64,6 +73,10 @@ int main(int argc, char **argv)
 
 	infile.close();
 
+	std::cout << "# Vertex Count:\t" << num_nodes << std::endl;
+	std::cout << "# Initial Edge Count:\t" << num_edges << std::endl;
+	std::cout << "Start initializing the lists, hashset and worklists ..." << std::endl;
+
 	tbb::concurrent_vector<uint> **edgeVecs = new tbb::concurrent_vector<uint> *[grammar.labelSize];
 	tbb::concurrent_vector<uint> **inEdgeVecs = new tbb::concurrent_vector<uint> *[grammar.labelSize];
 
@@ -83,12 +96,6 @@ int main(int argc, char **argv)
 	tbb::concurrent_vector<EdgeForReading> activeQueue;
 	tbb::concurrent_vector<EdgeForReading> futureQueue;
 
-	cout << "#nodes " << num_nodes << endl;
-	cout << "SF::#nodes " << nodes.size() << endl;
-	cout << "#edges " << num_edges << endl;
-
-	cout << "Start making sets and the hash ...\n";
-
 	for (uint i = 0; i < num_edges; i++)
 	{
 		edgeVecs[edges[i].label][edges[i].from].push_back(edges[i].to);
@@ -103,29 +110,18 @@ int main(int argc, char **argv)
 
 	// count the total no of initial unique edge
 	uint initialEdgeCount = countEdge(hashset, num_nodes, grammar.labelSize);
+	// std::cout << "#Intital Unique Edge Count:\t" << initialEdgeCount << std::endl
 
-	cout << "Done!\n";
+	std::cout << "Initialization Done!" << std::endl;
 
-	atomic<int> newEdgeCounter(0);
-	bool finished;
-	int itr = 0;
-	ull calcCnt = 0;
-	ull calcCnt1 = 0;
-	ull calcCnt2 = 0;
-	ull calcCnt3_left = 0;
-	ull calcCnt3_right = 0;
+	bool finished; // fixed-point iteration flag
+	int itr = 0;   // Iteration counter for fixed-point iteration
 
-	double elapsed_seconds_comp = 0.0;
-	double elapsed_seconds_transfer = 0.0;
-
+	std::cout << "Start Calculations...\n";
 	std::chrono::time_point<std::chrono::system_clock> start, finish;
 	start = std::chrono::system_clock::now();
 
 	// handle epsilon rules: add an edge to itself
-	// grammar1 is for epsilon rules A --> e
-	// grammar2 is for one symbol on RHS A --> B
-	// grammar3 is for two symbols on RHS A --> BC
-
 	for (uint l = 0; l < grammar.grammar1.size(); l++)
 	{
 #pragma omp parallel for schedule(static) num_threads(TOTAL_THREADS)
@@ -134,31 +130,27 @@ int main(int argc, char **argv)
 			// check if the new edge based on an epsilon grammar rule exists or not. l: grammar ID, 0: LHS
 			if (hashset[i][grammar.grammar1[l][0]].find(i) == hashset[i][grammar.grammar1[l][0]].end())
 			{
-				// insert into hashset
 				hashset[i][grammar.grammar1[l][0]].insert(i);
-				// insert into the graph
+
 				edgeVecs[grammar.grammar1[l][0]][i].push_back(i);
 				inEdgeVecs[grammar.grammar1[l][0]][i].push_back(i);
 
 				activeQueue.push_back(EdgeForReading(i, i, grammar.grammar1[l][0]));
-
-				newEdgeCounter++;
 			}
 		}
 	}
 
-	cout << "********************\n";
-
 	do
 	{
 		itr++;
+		std::cout << "Iteration " << itr << std::endl;
 
 #pragma omp parallel for schedule(static) num_threads(TOTAL_THREADS)
 		for (uint z = 0; z < activeQueue.size(); z++)
 		{
 			EdgeForReading currEdge = activeQueue[z];
 
-			// for each grammar rule like A --> B
+			// for each grammar rule like, A = B
 			for (uint g = 0; g < grammar.grammar2index[currEdge.label].size(); g++)
 			{
 				uint leftLabel = grammar.grammar2index[currEdge.label][g];
@@ -170,7 +162,7 @@ int main(int argc, char **argv)
 				}
 			}
 
-			// A = BC
+			// for each grammar rule like, A = BC
 			for (uint g = 0; g < grammar.grammar3indexLeft[currEdge.label].size(); g++)
 			{
 				uint B = currEdge.label;
@@ -180,9 +172,6 @@ int main(int argc, char **argv)
 				for (uint j = 0; j < edgeVecs[C][currEdge.to].size(); j++)
 				{
 					uint nbr;
-
-					// A = BC, B = grammar.grammar3[g][1] = currEdge.label
-					// NEW outgoing edges of currEdge.to
 					nbr = edgeVecs[C][currEdge.to][j];
 
 					if (hashset[currEdge.from][A].find(nbr) == hashset[currEdge.from][A].end())
@@ -193,7 +182,7 @@ int main(int argc, char **argv)
 				}
 			}
 
-			// A = CB, B = grammar.grammar3[g][2] = currEdge.label
+			// for each grammar rule like, A = CB
 			for (uint g = 0; g < grammar.grammar3indexRight[currEdge.label].size(); g++)
 			{
 				uint B = currEdge.label;
@@ -204,30 +193,30 @@ int main(int argc, char **argv)
 				{
 					uint inNbr;
 					inNbr = inEdgeVecs[C][currEdge.from][h];
-					// A = CB, C = grammar.grammar3[g][1]
+					
 					if (hashset[inNbr][A].find(currEdge.to) == hashset[inNbr][A].end())
 					{
 						hashset[inNbr][A].insert(currEdge.to);
 						futureQueue.push_back(EdgeForReading(inNbr, currEdge.to, A));
-						// newEdgeCounter++;
 					}
 				}
 			}
 		}
 
-		cout << "Iteration number " << itr << endl;
+		// std::cout << "# Generated edge in this itreation:\t" << futureQueue.size() << std::endl;
 
+		// Check if fixed-point is reached
 		finished = true;
 		if (futureQueue.size() > 0)
 		{
 			finished = false;
 		}
 
+		// Add the FUTURE edges to the adjacency lists
 #pragma omp parallel for schedule(static) num_threads(TOTAL_THREADS)
 		for (uint z = 0; z < futureQueue.size(); z++)
 		{
 			EdgeForReading edge = futureQueue[z];
-
 			edgeVecs[edge.label][edge.from].push_back(edge.to);
 			inEdgeVecs[edge.label][edge.to].push_back(edge.from);
 		}
@@ -236,21 +225,26 @@ int main(int argc, char **argv)
 		tbb::concurrent_vector<EdgeForReading>().swap(futureQueue);
 	} while (!finished);
 
+	// Get the calculation time
 	finish = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = finish - start;
 	std::time_t finish_time = std::chrono::system_clock::to_time_t(finish);
 
+	std::cout << "Calculation Done!" << std::endl;
+
 	uint totalNewEdgeCount = countEdge(hashset, num_nodes, grammar.labelSize) - initialEdgeCount;
 
-	cout << "**************************" << endl;
-	std::cout << "# Total time = " << elapsed_seconds.count() << std::endl;
-	std::cout << "# Total iterations = " << itr << endl;
+	std::cout << "----------RESULTS----------" << std::endl;
+	std::cout << "Graph File: " << inputGraph << std::endl;
+	std::cout << "--------------------------" << std::endl;
+	std::cout << "# Total Calculation Time =\t" << elapsed_seconds.count() << std::endl;
+	std::cout << "# Total NEW Edge Created =\t" << totalNewEdgeCount << std::endl;
+	std::cout << "# Total Iterations =\t" << itr << std::endl;
 
-	cout << "SF:: # Number of new edges: " << totalNewEdgeCount << endl;
-	cout << "AM:: # Number of new edges: " << newEdgeCounter << endl;
-
-	cout << "# Iterations: " << itr << endl;
-	cout << "# Total Calculations: " << calcCnt << endl;
+	// Get memory usage: comment this if not needed
+	getPeakMemoryUsage();
+	std::cout << "--------------------------" << std::endl;
+	std::cout << "------------END-----------" << std::endl;
 
 	for (uint i = 0; i < grammar.labelSize; i++)
 	{

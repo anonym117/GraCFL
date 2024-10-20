@@ -26,6 +26,7 @@ int main(int argc, char **argv)
 
 	std::cout << "-----------START----------" << std::endl;
 	std::cout << "--------------------------" << std::endl;
+
 	const std::string inputGraph = argv[1];
 	std::cout << "GraphFile:\t" << inputGraph << std::endl;
 
@@ -44,10 +45,10 @@ int main(int argc, char **argv)
 	uint num_nodes = 0;
 	uint num_edges = 0;
 
-	ifstream infile(inputGraph);
+	std::ifstream infile(inputGraph);
 
-	vector<EdgeForReading> edges;
-	unordered_set<uint> nodes;
+	std::vector<EdgeForReading> edges;
+	std::unordered_set<uint> nodes;
 	EdgeForReading newEdge;
 	uint from, to;
 	std::string label;
@@ -74,22 +75,21 @@ int main(int argc, char **argv)
 
 	infile.close();
 
+	std::cout << "# Vertex Count:\t" << num_nodes << std::endl;
+	std::cout << "# Initial Edge Count:\t" << num_edges << std::endl;
+	std::cout << "Start initializing the lists, hashset and worklists ..." << std::endl;
+
 	// Adjacency list for incoming edges: level-1: vertex ID, level-2: NEW, OLD, FUTURE, level-3: outgoing edges
-	vector<uint> **inEdgeVecs = new vector<uint> *[grammar.labelSize];
+	std::vector<uint> **inEdgeVecs = new std::vector<uint> *[grammar.labelSize];
 	// Adjacency list for outgoing edges:  level-1: vertex ID, level-2: NEW, OLD, FUTURE, level-3: outgoing edges
-	vector<uint> **edgeVecs = new vector<uint> *[grammar.labelSize];
+	std::vector<uint> **edgeVecs = new std::vector<uint> *[grammar.labelSize];
 	// hashset for duplicate edge check
-	vector<vector<unordered_set<ull>>> hashset(num_nodes, vector<unordered_set<ull>>(grammar.labelSize, unordered_set<ull>()));
+	std::vector<std::vector<std::unordered_set<ull>>> hashset(num_nodes, std::vector<std::unordered_set<ull>>(grammar.labelSize, std::unordered_set<ull>()));
 
 	// Worklist for NEW edges
-	queue<EdgeForReading> activeQueue;
+	std::queue<EdgeForReading> activeQueue;
 	// Worklist for FUTURE edges
-	queue<EdgeForReading> futureQueue;
-
-	std::cout << "#Vertex Count:\t" << num_nodes << std::endl;
-	std::cout << "#Initial Edge Count:\t" << num_edges << std::endl;
-
-	std::cout << "Start initializing the lists, hashset and worklists ..." << std::endl;
+	std::queue<EdgeForReading> futureQueue;
 
 	// Allocate memory for the adjacency lists
 	for (uint i = 0; i < grammar.labelSize; i++)
@@ -117,8 +117,8 @@ int main(int argc, char **argv)
 
 	std::cout << "Initialization Done!" << std::endl;
 
-	bool finished;
-	int itr = 0;
+	bool finished; // fixed-point iteration flag
+	int itr = 0; // Iteration counter for fixed-point iteration
 
 	cout << "Start Calculations...\n";
 	std::chrono::time_point<std::chrono::system_clock> start, finish;
@@ -205,7 +205,7 @@ int main(int argc, char **argv)
 			}
 		}
 
-		// std::cout << "#Generated edge in this itreation:\t" << futureQueue.size() << std::endl;
+		// std::cout << "# Generated edge in this itreation:\t" << futureQueue.size() << std::endl;
 
 		finished = true;
 		queue<EdgeForReading> tempQueue = futureQueue;
@@ -215,7 +215,6 @@ int main(int argc, char **argv)
 		{
 			EdgeForReading edge = tempQueue.front();
 			tempQueue.pop();
-
 			edgeVecs[edge.label][edge.from].push_back(edge.to);
 			inEdgeVecs[edge.label][edge.to].push_back(edge.from);
 		}
@@ -235,7 +234,9 @@ int main(int argc, char **argv)
 	std::time_t finish_time = std::chrono::system_clock::to_time_t(finish);
 
 	std::cout << "Calculation Done!" << std::endl;
+
 	uint totalNewEdgeCount = countEdge(hashset, num_nodes, grammar.labelSize) - initialEdgeCount;
+	
 	// Write output to a file
 	// writeOutputs(OUTPUT_FILE_PATH, hashset);
 
