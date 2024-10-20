@@ -93,8 +93,14 @@ else()
     set(TBB_MALLOC_PROXY_LIB TBB::tbbmalloc_proxy)
 endif()
 
+# Define the list of executables that need TBB and OpenMP
+set(TBB_EXECUTABLES
+    "e-centric-bi-grammar_driven-parallel"
+    "v-centric-bi-grammar_driven-label_indexed-parallel"
+)
+
 # Find all .cpp files in the src directory
-file(GLOB CPP_FILES "${SRC_DIR}/e-centric/*.cpp")
+file(GLOB CPP_FILES "${SRC_DIR}/*/*.cpp")
 
 # Loop through each .cpp file and create an executable
 foreach(CPP_FILE ${CPP_FILES})
@@ -119,7 +125,7 @@ foreach(CPP_FILE ${CPP_FILES})
     target_link_libraries(${EXE_NAME} PRIVATE ${JEMALLOC_LIBS})
 
     # If the executable is dependent on TBB, link all TBB-related libraries
-    if(${EXE_NAME} STREQUAL "e-centric-bi-grammar_driven-parallel")  # Replace with actual executable name
+    if(${EXE_NAME} IN_LIST TBB_EXECUTABLES)  # Replace with actual executable name
         if(TBB_FOUND)
             target_link_libraries(${EXE_NAME} PRIVATE TBB::tbb TBB::tbbmalloc TBB::tbbmalloc_proxy)
         else()

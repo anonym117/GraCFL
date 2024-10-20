@@ -1,40 +1,41 @@
-// #include <cilk/cilk.h>
-// #include <cilk/cilk_api.h>
-
 #include "globals.hpp"
 #include "grammar.hpp"
 
 /***
- * V-centric (bi, temporal ptrs, rule-lookup table)
- * Bi directional traversing of the Graph (incoming and outgoing edges) only
+ * V-centric (bw, temporal ptrs, rule-lookup table)
+ * Backward directional traversing of the Graph (incoming and outgoing edges) only
  * One buffer list instead of three for OLD, NEW, and FUTURE edges
  * Buffer struct (adjcency list is made with this struct) holds the pointes for the OLD, NEW, and FUTURE edges in the single buffer list
  * Check the Future edge flag whenever an edge is created
- * Grammar index
+ * Rule Lookup Table
  */
 
 int main(int argc, char **argv)
 {
 
-	bool debug = false;
-	// Get the graph file path and grammar file path from command line argument
+	// Get the graph file path and grammar file path from command line argument: output file path is optional
 	if (argc == 1)
 	{
-		cout << "Please provide the graph file path and grammar file path. For example, ./topo-driven <graph_file> <grammar_file>" << endl;
+		std::cout << "Please provide the graph file path and grammar file path. For example, ./exc.out <graph_file> <grammar_file>" << std::endl;
 		return 0;
 	}
 	else if (argc == 2)
 	{
-		cout << "Please provide the grammar file path. For example, ./topo-driven <graph_file> <grammar_file>" << endl;
+		std::cout << "Please provide the grammar file path. For example, ./exc.out <graph_file> <grammar_file>" << std::endl;
 		return 0;
 	}
 
-	// read Graph and Grammar
-	const string inputGraph = argv[1];
-	Grammar grammar(argv[2]);
+	std::cout << "-----------START----------" << std::endl;
+	std::cout << "--------------------------" << std::endl;
 
-	//        grammar.printGrammarIndex3_2();
-	//      exit(1);
+	const std::string inputGraph = argv[1];
+	std::cout << "GraphFile:\t" << inputGraph << std::endl;
+
+	std::string grammarFilePath = argv[2];
+	std::cout << "GrammarFile:\t" << grammarFilePath << endl;
+	std::cout << "--------------------------" << std::endl;
+
+	Grammar grammar(grammarFilePath); // Read grammar
 
 	uint num_nodes = 0;
 	uint num_edges = 0;
@@ -69,20 +70,16 @@ int main(int argc, char **argv)
 
 	infile.close();
 
-	// level-1: vertex ID, level-2: NEW, OLD, FUTURE pointers and incoming edges
-	//vector<Buffer> inEdgeVecs(num_nodes);
+	std::cout << "# Vertex Count:\t" << num_nodes << std::endl;
+	std::cout << "# Initial Edge Count:\t" << num_edges << std::endl;
+	std::cout << "Start initializing the lists, hashset and worklists ..." << std::endl;
+
 	// level-1: vertex ID, level-2: NEW, OLD, FUTURE pointers and outgoing edges
 	vector<Buffer> inEdgeVecs(num_nodes);
 
 	// check if an edge exist or not
-	// unordered_set<ull> *hashset = new unordered_set<ull>[num_nodes];
 	vector<vector<unordered_set<ull>>> inHashset(num_nodes, vector<unordered_set<ull>>(grammar.labelSize, unordered_set<ull>()));
 
-	cout << "#nodes " << num_nodes << endl;
-	cout << "SF::#nodes " << nodes.size() << endl;
-	cout << "#edges " << num_edges << endl;
-
-	cout << "Start making sets and the hash ...\n";
 	for (uint i = 0; i < num_edges; i++)
 	{
 		//edgeVecs[edges[i].from].vertexList.push_back(OutEdge(edges[i].to, edges[i].label));
@@ -100,52 +97,38 @@ int main(int argc, char **argv)
 	// count the total no of initial unique edge
 	uint initialEdgeCount = countEdge(inHashset, num_nodes, grammar.labelSize);
 
-	cout << "Done!\n";
+	std::cout << "Initialization Done!" << std::endl;
 
-	// currently exclude the initialization time
+	bool finished; // fixed-point iteration flag
+	int itr = 0; // Iteration counter for fixed-point iteration
+
+	std::cout << "Start Calculations...\n";
 	std::chrono::time_point<std::chrono::system_clock> start, finish;
 	start = std::chrono::system_clock::now();
 
-	atomic<int> newEdgeCounter(0);
-	bool finished;
-	int itr = 0;
-	ull calcCnt = 0;
-	double elapsed_seconds_comp = 0.0;
-	double elapsed_seconds_transfer = 0.0;
-
 	// handle epsilon rules: add an edge to itself
-	// grammar1 is for epsilon rules A --> e
-	// grammar2 is for one symbol on RHS A --> B
-	// grammar3 is for two symbols on RHS A --> BC
 	for (uint l = 0; l < grammar.grammar1.size(); l++)
 	{
 		for (uint i = 0; i < num_nodes; i++)
 		{
-			calcCnt++;
 			// check if the new edge based on an epsilon grammar rule exists or not. l: grammar ID, 0: LHS
 			if (inHashset[i][grammar.grammar1[l][0]].find(i) == inHashset[i][grammar.grammar1[l][0]].end())
 			{
 				// insert into hashset
 				inHashset[i][grammar.grammar1[l][0]].insert(i);
 				// insert into the graph
-				//edgeVecs[i].vertexList.push_back(OutEdge(i, grammar.grammar1[l][0]));
 				inEdgeVecs[i].vertexList.push_back(OutEdge(i, grammar.grammar1[l][0]));
 				// update the pointers
-				//edgeVecs[i].NEW_END++;
 				inEdgeVecs[i].NEW_END++;
 			}
 		}
 	}
 
-	cout << "********************\n";
-
 	do
 	{
 		finished = true;
 		itr++;
-
-		std::chrono::time_point<std::chrono::system_clock> startC, finishC;
-		startC = std::chrono::system_clock::now();
+		std::cout << "Iteration number " << itr << std::endl;
 
 		// for each grammar rule like A --> B
 		for (uint i = 0; i < num_nodes; i++)
@@ -164,7 +147,6 @@ int main(int argc, char **argv)
 
 				for (uint g = 0; g < leftLabels.size(); g++)
 				{
-					calcCnt++;
 					if (inHashset[i][leftLabels[g]].find(nbr.end) == inHashset[i][leftLabels[g]].end())
 					{
 						finished = false;
@@ -187,7 +169,6 @@ int main(int argc, char **argv)
 
 					for (uint g = 0; g < leftLabels.size(); g++)
 					{
-						calcCnt++;
 						if (inHashset[i][leftLabels[g]].find(outInNbr.end) == inHashset[i][leftLabels[g]].end())
 						{
 							finished = false;
@@ -216,7 +197,6 @@ int main(int argc, char **argv)
 
 					for (uint g = 0; g < leftLabels.size(); g++)
 					{
-						calcCnt++;
 						if (inHashset[i][leftLabels[g]].find(outInNbr.end) == inHashset[i][leftLabels[g]].end())
 						{
 							finished = false;
@@ -229,35 +209,29 @@ int main(int argc, char **argv)
 			}
 		}
 
-		cout << "Iteration number " << itr << endl;
-
 		for (int i = 0; i < num_nodes; i++)
 		{
 			// update the pointers
 			inEdgeVecs[i].OLD_END = inEdgeVecs[i].NEW_END;
-			//inEdgeVecs[i].OLD_END = inEdgeVecs[i].NEW_END;
-
 			inEdgeVecs[i].NEW_END = inEdgeVecs[i].vertexList.size();
-			//inEdgeVecs[i].NEW_END = inEdgeVecs[i].vertexList.size();
 		}
 	} while (!finished);
 
 	finish = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = finish - start;
-	std::time_t finish_time = std::chrono::system_clock::to_time_t(finish);
+	std::cout << "Calculation Done!" << std::endl;
 
 	uint totalNewEdgeCount = countEdge(inHashset, num_nodes, grammar.labelSize) - initialEdgeCount;
 
-	cout << "**************************" << endl;
-	std::cout << "# Total time = " << elapsed_seconds.count() << std::endl;
-	std::cout << "# Total computation time = " << elapsed_seconds_comp << std::endl;
-	std::cout << "# Total data transfer time = " << elapsed_seconds_transfer << std::endl;
+	std::cout << "----------RESULTS----------" << std::endl;
+	std::cout << "Graph File: " << inputGraph << std::endl;
+	std::cout << "--------------------------" << std::endl;
+	std::cout << "# Total Calculation Time =\t" << elapsed_seconds.count() << std::endl;
+	std::cout << "# Total NEW Edge Created =\t" << totalNewEdgeCount << std::endl;
+	std::cout << "# Total Iterations =\t" << itr << std::endl;
 
-	cout << "SF:: # Number of new edges: " << totalNewEdgeCount << endl;
-	cout << "AM:: # Number of new edges: " << newEdgeCounter << endl;
-
-	cout << "# Iterations: " << itr << endl;
-	cout << "# Total Calculations: " << calcCnt << endl;
-
-    getPeakMemoryUsage();
+    // Get memory usage: comment this if not needed
+	getPeakMemoryUsage();
+	std::cout << "--------------------------" << std::endl;
+	std::cout << "------------END-----------" << std::endl;
 }

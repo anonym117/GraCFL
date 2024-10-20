@@ -1,37 +1,40 @@
-#include "globals-new.hpp"
+#include "globals.hpp"
 #include "grammar.hpp"
 
 /***
- * V-centric (forward, temporal ptrs, grammar driven) - the real one
- * Bi directional traversing of the Graph (incoming and outgoing edges)
- * One buffer list instead of three for OLD, NEW, and FUTURE edges
- * Buffer struct (adjcency list is made with this struct) holds the pointes for the OLD, NEW, and FUTURE edges in the single buffer list
+ * V-centric (forward, sliding ptrs, grammar driven)
+ * Forward directional traversing of the Graph (outgoing edges)
+ * One BufferEdge list instead of three for OLD, NEW, and FUTURE edges
+ * BufferEdgeEdge struct (adjcency list is made with this struct) holds the pointers for the OLD, NEW, and FUTURE edges in the single BufferEdge list
  * Check the Future edge flag whenever an edge is created
  * Grammar index
  */
 
 int main(int argc, char **argv)
 {
+    // Get the graph file path and grammar file path from command line argument: output file path is optional
+	if (argc == 1)
+	{
+		std::cout << "Please provide the graph file path and grammar file path. For example, ./exc.out <graph_file> <grammar_file>" << std::endl;
+		return 0;
+	}
+	else if (argc == 2)
+	{
+		std::cout << "Please provide the grammar file path. For example, ./exc.out <graph_file> <grammar_file>" << std::endl;
+		return 0;
+	}
 
-    bool debug = false;
-    // Get the graph file path and grammar file path from command line argument
-    if (argc == 1)
-    {
-        cout << "Please provide the graph file path and grammar file path. For example, ./topo-driven <graph_file> <grammar_file>" << endl;
-        return 0;
-    }
-    else if (argc == 2)
-    {
-        cout << "Please provide the grammar file path. For example, ./topo-driven <graph_file> <grammar_file>" << endl;
-        return 0;
-    }
+	std::cout << "-----------START----------" << std::endl;
+	std::cout << "--------------------------" << std::endl;
 
-    // read Graph and Grammar
-    const string inputGraph = argv[1];
-    Grammar grammar(argv[2]);
+	const std::string inputGraph = argv[1];
+	std::cout << "GraphFile:\t" << inputGraph << std::endl;
 
-    //        grammar.printGrammarIndex3_2();
-    //      exit(1);
+	std::string grammarFilePath = argv[2];
+	std::cout << "GrammarFile:\t" << grammarFilePath << endl;
+	std::cout << "--------------------------" << std::endl;
+
+	Grammar grammar(grammarFilePath); // Read grammar
 
     uint num_nodes = 0;
     uint num_edges = 0;
@@ -66,30 +69,20 @@ int main(int argc, char **argv)
 
     infile.close();
 
-    // level-1: vertex ID, level 2:  grammar labels level-3: NEW, OLD, FUTURE pointers and incoming edges
-    // vector<vector<Buffer>> inEdgeVecs(num_nodes, vector<Buffer>(grammar.labelSize));
+    std::cout << "# Vertex Count:\t" << num_nodes << std::endl;
+	std::cout << "# Initial Edge Count:\t" << num_edges << std::endl;
+	std::cout << "Start initializing the lists, hashset and worklists ..." << std::endl;
+
     // level-1: vertex ID, level-2: NEW, OLD, FUTURE pointers and outgoing edges
-    vector<vector<Buffer>> edgeVecs(grammar.labelSize, vector<Buffer>(num_nodes));
+    vector<vector<BufferEdge>> edgeVecs(grammar.labelSize, vector<BufferEdge>(num_nodes));
 
     vector<vector<unordered_set<ull>>> hashset(num_nodes, vector<unordered_set<ull>>(grammar.labelSize, unordered_set<ull>()));
-    // hashset for incoming edges
-    // unordered_set<ull> *inHashset = new unordered_set<ull>[num_nodes];
-
-    cout << "#nodes " << num_nodes << endl;
-    cout << "SF::#nodes " << nodes.size() << endl;
-    cout << "#edges " << num_edges << endl;
-
-    cout << "Start making sets and the hash ...\n";
 
     for (uint i = 0; i < num_edges; i++)
     {
         edgeVecs[edges[i].label][edges[i].from].vertexList.push_back(edges[i].to);
-        // inEdgeVecs[edges[i].to][edges[i].label].vertexList.push_back(edges[i].from);
-
-        // update the buffer pointers
+        // update the BufferEdge pointers
         edgeVecs[edges[i].label][edges[i].from].NEW_END++;
-        // inEdgeVecs[edges[i].to][edges[i].label].NEW_END++;
-
         // insert edge into the hashset
         hashset[edges[i].from][edges[i].label].insert(edges[i].to);
     }
@@ -99,34 +92,22 @@ int main(int argc, char **argv)
     // count the total no of initial unique edge
     uint initialEdgeCount = countEdge(hashset, num_nodes, grammar.labelSize);
 
-    cout << "Done!\n";
+    std::cout << "Initialization Done!" << std::endl;
+
+    bool finished; // fixed-point iteration flag
+	int itr = 0; // Iteration counter for fixed-point iteration
+
+    std::cout << "Start Calculations...\n";
 
     // currently exclude the initialization time
     std::chrono::time_point<std::chrono::steady_clock> start, finish;
-    std::chrono::time_point<std::chrono::steady_clock> startTransfer, finishTransfer;
-    std::chrono::time_point<std::chrono::steady_clock> startItr, finishItr;
     start = std::chrono::steady_clock::now();
 
-    uint newEdgeCnt = initialEdgeCount;
-    uint oldEdgeCnt = 0;
-    uint futureEdgeCnt = 0;
-
-    atomic<int> newEdgeCounter(0);
-    bool finished;
-    int itr = 0;
-    ull calcCnt = 0;
-    double elapsed_seconds_comp = 0.0;
-    double elapsed_seconds_transfer = 0.0;
-
     // handle epsilon rules: add an edge to itself
-    // grammar1 is for epsilon rules A --> e
-    // grammar2 is for one symbol on RHS A --> B
-    // grammar3 is for two symbols on RHS A --> BC
     for (uint l = 0; l < grammar.grammar1.size(); l++)
     {
         for (uint i = 0; i < num_nodes; i++)
         {
-            calcCnt++;
             // check if the new edge based on an epsilon grammar rule exists or not. l: grammar ID, 0: LHS
             if (hashset[i][grammar.grammar1[l][0]].find(i) == hashset[i][grammar.grammar1[l][0]].end())
             {
@@ -134,26 +115,17 @@ int main(int argc, char **argv)
                 hashset[i][grammar.grammar1[l][0]].insert(i);
                 // insert edge into the graph
                 edgeVecs[grammar.grammar1[l][0]][i].vertexList.push_back(i);
-                // inEdgeVecs[i][grammar.grammar1[l][0]].vertexList.push_back(i);
-
                 // update the sliding/temporal pointers
                 edgeVecs[grammar.grammar1[l][0]][i].NEW_END++;
-                // inEdgeVecs[i][grammar.grammar1[l][0]].NEW_END++;
-
-                // newEdgeCounter++;
-                newEdgeCnt++;
             }
         }
     }
 
-    cout << "********************\n";
-
     do
     {
-        startItr = std::chrono::steady_clock::now();
-
         finished = true;
         itr++;
+        std::cout << "Iteration number " << itr << std::endl;
 
         // for each grammar rule like A --> B
         for (uint g = 0; g < grammar.labelSize; g++)
@@ -172,7 +144,6 @@ int main(int argc, char **argv)
                     // rule: A = B
                     for (uint m = 0; m < grammar.grammar2index[g].size(); m++)
                     {
-                        // calcCnt++;
                         uint A = grammar.grammar2index[g][m];
 
                         if (hashset[i][A].find(nbr) == hashset[i][A].end())
@@ -180,8 +151,6 @@ int main(int argc, char **argv)
                             finished = false;
                             hashset[i][A].insert(nbr);
                             edgeVecs[A][i].vertexList.push_back(nbr);
-
-                            futureEdgeCnt++;
                         }
                     }
 
@@ -199,14 +168,11 @@ int main(int argc, char **argv)
                         {
                             uint outNbr = edgeVecs[C][nbr].vertexList[h];
 
-                            // calcCnt++;
                             if (hashset[i][A].find(outNbr) == hashset[i][A].end())
                             {
                                 finished = false;
                                 hashset[i][A].insert(outNbr);
                                 edgeVecs[A][i].vertexList.push_back(outNbr);
-
-                                futureEdgeCnt++;
                             }
                         }
                     }
@@ -240,22 +206,12 @@ int main(int argc, char **argv)
                                 finished = false;
                                 hashset[i][A].insert(outNbr);
                                 edgeVecs[A][i].vertexList.push_back(outNbr);
-
-                                futureEdgeCnt++;
                             }
                         }
                     }
                 }
             }
         }
-
-        finishItr = std::chrono::steady_clock::now();
-
-        cout << "---------------------------------" << itr << endl;
-        cout << "Iteration number " << itr << endl;
-        cout << "---------------------------------" << itr << endl;
-
-        startTransfer = std::chrono::steady_clock::now();
 
         for (uint g = 0; g < grammar.labelSize; g++)
         {
@@ -267,38 +223,23 @@ int main(int argc, char **argv)
             }
         }
 
-        finishTransfer = std::chrono::steady_clock::now();
-        std::chrono::duration<double> elapsedSecondsTransferCurr = finishTransfer - startTransfer;
-        elapsed_seconds_transfer += elapsedSecondsTransferCurr.count();
-
-        std::chrono::duration<double> elapsed_secondsItr = finishItr - startItr;
-        double elapsed_seconds_itr = elapsed_secondsItr.count();
-
-        cout << "TIME:\t" << elapsed_seconds_itr << endl;
-        cout << "FUTURE EDGES:\t" << futureEdgeCnt << endl;
-        cout << "NEW EDGE:\t" << newEdgeCnt << endl;
-        cout << "OLD EDGE:\t" << oldEdgeCnt << endl;
-
-        oldEdgeCnt += newEdgeCnt;
-        newEdgeCnt = futureEdgeCnt;
-        futureEdgeCnt = 0;
-
     } while (!finished);
 
     finish = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed_seconds = finish - start;
-    // std::time_t finish_time = std::chrono::steady_clock::to_time_t(finish);
+    std::cout << "Calculation Done!" << std::endl;
 
     uint totalNewEdgeCount = countEdge(hashset, num_nodes, grammar.labelSize) - initialEdgeCount;
 
-    cout << "**************************" << endl;
-    std::cout << "# Total time = " << elapsed_seconds.count() << std::endl;
-    std::cout << "# Total computation time = " << elapsed_seconds_comp << std::endl;
-    std::cout << "# Total data transfer time = " << elapsed_seconds_transfer << std::endl;
+    std::cout << "----------RESULTS----------" << std::endl;
+	std::cout << "Graph File: " << inputGraph << std::endl;
+	std::cout << "--------------------------" << std::endl;
+	std::cout << "# Total Calculation Time =\t" << elapsed_seconds.count() << std::endl;
+	std::cout << "# Total NEW Edge Created =\t" << totalNewEdgeCount << std::endl;
+	std::cout << "# Total Iterations =\t" << itr << std::endl;
 
-    cout << "SF:: # Number of new edges: " << totalNewEdgeCount << endl;
-    cout << "AM:: # Number of new edges: " << newEdgeCounter << endl;
-
-    cout << "# Iterations: " << itr << endl;
-    cout << "# Total Calculations: " << calcCnt << endl;
+    // Get memory usage: comment this if not needed
+	getPeakMemoryUsage();
+	std::cout << "--------------------------" << std::endl;
+	std::cout << "------------END-----------" << std::endl;
 }
