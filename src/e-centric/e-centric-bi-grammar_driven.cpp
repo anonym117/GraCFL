@@ -7,35 +7,7 @@
  * Label and vertex indexed adjacency lists
  */
 
-void writeOutputs(std::string OUTPUT_FILE_PATH, vector<vector<unordered_set<ull>>> &hashsetNew)
-{
-	std::ofstream outFile(OUTPUT_FILE_PATH);
 
-	// Check if the file is open
-	if (outFile.is_open())
-	{
-		// Write the content to the file
-		for (int i = 0; i < hashsetNew.size(); i++) // num_nodes
-		{
-			for (uint j = 0; j < hashsetNew[i].size(); j++) // grammar label size
-			{
-				for (auto &dst : hashsetNew[i][j])
-				{
-					outFile << i << " " << j << " " << dst << "\n";
-				}
-			}
-		}
-
-		// Close the file
-		outFile.close();
-		std::cout << "Output file written successfully." << std::endl;
-		std::cout << "Output filepath:\t" << OUTPUT_FILE_PATH << std::endl;
-	}
-	else
-	{
-		std::cerr << "Unable to open the output file." << std::endl;
-	}
-}
 
 int main(int argc, char **argv)
 {
