@@ -15,6 +15,9 @@ set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 # Include the directory for header files
 include_directories(${INCLUDE_DIR})
 
+# Find OpenMP
+find_package(OpenMP)
+
 # Set the output directory for executables
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
@@ -122,6 +125,10 @@ foreach(CPP_FILE ${CPP_FILES})
         else()
             add_dependencies(${EXE_NAME} libTBB)
             target_link_libraries(${EXE_NAME} PRIVATE ${TBB_LIB} ${TBB_MALLOC_LIB} ${TBB_MALLOC_PROXY_LIB})  # Link all TBB-related libs from lib64
+        endif()
+	# Add OpenMP flags if OpenMP is found
+        if(OpenMP_CXX_FOUND)
+            target_link_libraries(${EXE_NAME} PRIVATE OpenMP::OpenMP_CXX)
         endif()
     endif()
 endforeach()
