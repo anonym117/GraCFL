@@ -6,9 +6,9 @@ log*
 logs/
 SBATCH*
 *.out
-run*
 compile*
 srun*
 test*
 inter*
 build/*
+*log*
