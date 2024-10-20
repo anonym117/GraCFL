@@ -1,7 +1,7 @@
 //#include <cilk/cilk.h>
 //#include <cilk/cilk_api.h>
 
-#include "globals-bi.hpp"
+#include "globals.hpp"
 #include "grammar.hpp"
 
 /***

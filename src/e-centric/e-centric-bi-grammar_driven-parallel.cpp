@@ -1,5 +1,5 @@
 #include <omp.h>
-#include "globals-bi.hpp"
+#include "globals.hpp"
 #include "globals-par.hpp"
 #include "grammar.hpp"
 

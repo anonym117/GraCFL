@@ -1,4 +1,4 @@
-#include "globals-new.hpp"
+#include "globals.hpp"
 #include "grammar.hpp"
 
 /***
@@ -37,9 +37,9 @@ int main(int argc, char **argv)
 
     ifstream infile(inputGraph);
 
-    vector<EdgeForReading2> edges;
+    vector<EdgeForReading> edges;
     unordered_set<uint> nodes;
-    EdgeForReading2 newEdge;
+    EdgeForReading newEdge;
     uint from, to;
     string label;
     while (infile >> newEdge.from)
@@ -72,10 +72,10 @@ int main(int argc, char **argv)
 
     vector<vector<unordered_set<ull>>> hashset(num_nodes, vector<unordered_set<ull>>(grammar.labelSize, unordered_set<ull>()));
 
-    queue<EdgeForReading2> newWorklist;
-    queue<EdgeForReading2> futureNewWorklist;
-    vector<EdgeForReading2> oldWorklist;
-    // queue<EdgeForReading2> futureOldWorklist;
+    queue<EdgeForReading> newWorklist;
+    queue<EdgeForReading> futureNewWorklist;
+    vector<EdgeForReading> oldWorklist;
+    // queue<EdgeForReading> futureOldWorklist;
     // hashset for incoming edges
     // unordered_set<ull> *inHashset = new unordered_set<ull>[num_nodes];
 
@@ -145,7 +145,7 @@ int main(int argc, char **argv)
                 edgeVecs[grammar.grammar1[l][0]][i].NEW_END++;
                 // inEdgeVecs[i][grammar.grammar1[l][0]].NEW_END++;
 
-                newWorklist.push(EdgeForReading2(i, i, grammar.grammar1[l][0]));
+                newWorklist.push(EdgeForReading(i, i, grammar.grammar1[l][0]));
 
                 // newEdgeCounter++;
                 newEdgeCnt++;
@@ -166,7 +166,7 @@ int main(int argc, char **argv)
 
         while (!newWorklist.empty())
         {
-            EdgeForReading2 currEdge = newWorklist.front();
+            EdgeForReading currEdge = newWorklist.front();
             newWorklist.pop();
 
             // for each grammar rule, A --> B
@@ -187,7 +187,7 @@ int main(int argc, char **argv)
                     // is similar to FUTURE list's purpose.
                     // for data-driven, we only need one list (no NEW OLD FUTURE)
                     edgeVecs[leftLabel][currEdge.from].vertexList.push_back(currEdge.to);
-                    futureNewWorklist.push(EdgeForReading2(currEdge.from, currEdge.to, leftLabel));
+                    futureNewWorklist.push(EdgeForReading(currEdge.from, currEdge.to, leftLabel));
 
                     // newEdgeCounter++;
                 }
@@ -218,7 +218,7 @@ int main(int argc, char **argv)
                     {
                         // finished = false;
                         hashset[currEdge.from][A].insert(nbr);
-                        futureNewWorklist.push(EdgeForReading2(currEdge.from, nbr, A));
+                        futureNewWorklist.push(EdgeForReading(currEdge.from, nbr, A));
                         edgeVecs[A][currEdge.from].vertexList.push_back(nbr);
                         // newEdgeCounter++;
                     }
@@ -230,7 +230,7 @@ int main(int argc, char **argv)
 
         for (uint i = 0; i < CURR_OLD_SIZE; i++)
         {
-            EdgeForReading2 currEdge = oldWorklist[i];
+            EdgeForReading currEdge = oldWorklist[i];
             // A = BC
             for (uint g = 0; g < grammar.grammar3indexLeft[currEdge.label].size(); g++)
             {
@@ -256,7 +256,7 @@ int main(int argc, char **argv)
                     {
                         // finished = false;
                         hashset[currEdge.from][A].insert(nbr);
-                        futureNewWorklist.push(EdgeForReading2(currEdge.from, nbr, A));
+                        futureNewWorklist.push(EdgeForReading(currEdge.from, nbr, A));
                         edgeVecs[A][currEdge.from].vertexList.push_back(nbr);
                         // newEdgeCounter++;
                     }

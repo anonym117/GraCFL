@@ -1,4 +1,4 @@
-#include "globals-bi.hpp"
+#include "globals.hpp"
 #include "grammar.hpp"
 
 /*
