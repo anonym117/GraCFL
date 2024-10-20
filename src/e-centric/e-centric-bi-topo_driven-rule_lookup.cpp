@@ -1,8 +1,8 @@
 //#include <cilk/cilk.h>
 //#include <cilk/cilk_api.h>
 
-#include "globals.hpp"
-#include "grammar.hpp"
+#include "globals-bi.hpp"
+#include "grammar-bi.hpp"
 
 /***
  * E-centric (Bi, rule-lookup table, new edge worklist)
