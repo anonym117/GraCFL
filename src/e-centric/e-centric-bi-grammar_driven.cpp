@@ -1,116 +1,84 @@
-// #include <cilk/cilk.h>
-// #include <cilk/cilk_api.h>
-
 #include "globals-bi.hpp"
 #include "grammar.hpp"
 
 /*
- * E-centric w/ rule-idx and label-idx-adj_list
- * new edge worklist, iterative
+ * E-centric-BI w/
+ * Grammar driven
+ * Label and vertex indexed adjacency lists
  */
 
-void writeOutputs(string PARTITIONS_DIR_PATH, string filename, vector<vector<unordered_set<ull>>>& hashsetNew)
+void writeOutputs(std::string OUTPUT_FILE_PATH, vector<vector<unordered_set<ull>>> &hashsetNew)
 {
-    string out_filepath = PARTITIONS_DIR_PATH + filename + "_output.txt";
-    std::ofstream outFile(out_filepath);
+	std::ofstream outFile(OUTPUT_FILE_PATH);
 
-    // Check if the file is open
-    if (outFile.is_open()) {
-        // Write the content to the file
-        for (int i = 0; i < hashsetNew.size(); i++) // num_nodes
-        {
-            for (uint j = 0; j < hashsetNew[i].size(); j++) // grammar label size
-            {
-                for (auto &dst : hashsetNew[i][j])
-                {
-                    outFile << i << " " << j << " " << dst << "\n";
-                }
-            }
-        }
+	// Check if the file is open
+	if (outFile.is_open())
+	{
+		// Write the content to the file
+		for (int i = 0; i < hashsetNew.size(); i++) // num_nodes
+		{
+			for (uint j = 0; j < hashsetNew[i].size(); j++) // grammar label size
+			{
+				for (auto &dst : hashsetNew[i][j])
+				{
+					outFile << i << " " << j << " " << dst << "\n";
+				}
+			}
+		}
 
-        // Close the file
-        outFile.close();
-        std::cout << "File written successfully." << std::endl;
-    } else {
-        std::cerr << "Unable to open file." << std::endl;
-    }
-
+		// Close the file
+		outFile.close();
+		std::cout << "Output file written successfully." << std::endl;
+		std::cout << "Output filepath:\t" << OUTPUT_FILE_PATH << std::endl;
+	}
+	else
+	{
+		std::cerr << "Unable to open the output file." << std::endl;
+	}
 }
-
-void getPeakMemoryUsage()
-{
-        std::string line;
-        std::ifstream statusFile("/proc/self/status");
-
-        while (getline(statusFile, line))
-        {
-                if (line.substr(0, 7) == "VmPeak:")
-                {
-                        long memoryKb;
-                        std::istringstream iss(line.substr(7));
-                        iss >> memoryKb;
-                        double memGB = memoryKb / (1024.0 * 1024.0);
-                        std::cout << "Peak Virtual Memory Usage: " << memoryKb << " KB" << std::endl;
-                        std::cout << "Peak Virtual Memory Usage (in GB): " << memGB << " GB" << std::endl;
-                }
-
-                if (line.substr(0, 6) == "VmHWM:")
-                {
-                        long memoryKb;
-                        std::istringstream iss(line.substr(6));
-                        iss >> memoryKb;
-                        double memGB = memoryKb / (1024.0 * 1024.0);
-                        std::cout << "Peak Physical  Memory Usage: " << memoryKb << " KB" << std::endl;
-                        std::cout << "Peak Physical Memory Usage (in GB): " << memGB << " GB" << std::endl;
-                }
-                
-                if (line.substr(0, 6) == "VmRSS:")
-                {
-                    long memoryKb;
-                    std::istringstream iss(line.substr(6));
-                    iss >> memoryKb;
-                    double memGB = memoryKb / (1024.0 * 1024.0);
-                    std::cout << "VmRSS  Memory Usage: " << memoryKb << " KB" << std::endl;
-                    std::cout << "VmRSS Memory Usage (in GB): " << memGB << " GB" << std::endl;
-                }
-        }
-}
-
 
 int main(int argc, char **argv)
 {
 
-	// bool debug = true;
-	// Get the graph file path and grammar file path from command line argument
+	// Get the graph file path and grammar file path from command line argument: output file path is optional
 	if (argc == 1)
 	{
-		cout << "Please provide the graph file path and grammar file path. For example, ./topo-driven <graph_file> <grammar_file>" << endl;
+		std::cout << "Please provide the graph file path and grammar file path. For example, ./exc.out <graph_file> <grammar_file>" << endl;
 		return 0;
 	}
 	else if (argc == 2)
 	{
-		cout << "Please provide the grammar file path. For example, ./topo-driven <graph_file> <grammar_file>" << endl;
+		std::cout << "Please provide the grammar file path. For example, ./exc.out <graph_file> <grammar_file>" << endl;
 		return 0;
 	}
 
-	std::chrono::time_point<std::chrono::system_clock> start_proc_one, start_proc_two, finish_proc;
-	start_proc_one = std::chrono::system_clock::now();
+	std::cout << "-----------START----------" << std::endl;
+	std::cout << "--------------------------" << std::endl;
+	const std::string inputGraph = argv[1];
+	std::cout << "GraphFile:\t" << inputGraph << std::endl;
 
-	const string inputGraph = argv[1];
-	Grammar grammar(argv[2]);
-    	string PARTITIONS_DIR_PATH = argv[3];
+	std::string grammarFilePath = argv[2];
+	std::cout << "GrammarFile:\t" << grammarFilePath << endl;
+	std::cout << "--------------------------" << std::endl;
+
+	Grammar grammar(grammarFilePath); // Read grammar
+
+	std::string OUTPUT_FILE_PATH = inputGraph + ".output";
+	if (argc == 4)
+	{
+		std::string OUTPUT_FILE_PATH = argv[3];
+	}
 
 	uint num_nodes = 0;
 	uint num_edges = 0;
 
 	ifstream infile(inputGraph);
 
-
 	vector<EdgeForReading> edges;
 	unordered_set<uint> nodes;
 	EdgeForReading newEdge;
 	uint from, to;
-	string label;
+	std::string label;
 	while (infile >> newEdge.from)
 	{
 		infile >> newEdge.to;
@@ -134,31 +102,31 @@ int main(int argc, char **argv)
 
 	infile.close();
 
-	start_proc_two = std::chrono::system_clock::now();
-
+	// Adjacency list for incoming edges: level-1: vertex ID, level-2: NEW, OLD, FUTURE, level-3: outgoing edges
 	vector<uint> **inEdgeVecs = new vector<uint> *[grammar.labelSize];
-	// level-1: vertex ID, level-2: NEW, OLD, FUTURE, level-3: outgoing edges
+	// Adjacency list for outgoing edges:  level-1: vertex ID, level-2: NEW, OLD, FUTURE, level-3: outgoing edges
 	vector<uint> **edgeVecs = new vector<uint> *[grammar.labelSize];
-
-	// check if an edge exist or not
-	// unordered_set<ull> **hashset = new unordered_set<ull> *[num_nodes];
+	// hashset for duplicate edge check
 	vector<vector<unordered_set<ull>>> hashset(num_nodes, vector<unordered_set<ull>>(grammar.labelSize, unordered_set<ull>()));
 
+	// Worklist for NEW edges
 	queue<EdgeForReading> activeQueue;
+	// Worklist for FUTURE edges
 	queue<EdgeForReading> futureQueue;
 
-	cout << "#nodes " << num_nodes << endl;
-	cout << "SF::#nodes " << nodes.size() << endl;
-	cout << "#edges " << num_edges << endl;
+	std::cout << "#Vertex Count:\t" << num_nodes << std::endl;
+	std::cout << "#Initial Edge Count:\t" << num_edges << std::endl;
 
-	cout << "Start making sets and the hash ...\n";
+	std::cout << "Start initializing the lists, hashset and worklists ..." << std::endl;
 
+	// Allocate memory for the adjacency lists
 	for (uint i = 0; i < grammar.labelSize; i++)
 	{
 		edgeVecs[i] = new vector<uint>[num_nodes];
 		inEdgeVecs[i] = new vector<uint>[num_nodes];
 	}
 
+	// Add initial edges to the adjacency lists, hashsets and worklist
 	for (uint i = 0; i < num_edges; i++)
 	{
 		edgeVecs[edges[i].label][edges[i].from].push_back(edges[i].to);
@@ -171,102 +139,60 @@ int main(int argc, char **argv)
 
 	edges.clear();
 
-	// count the total no of initial unique edge
-	//uint initialEdgeCount = countEdge(hashset, num_nodes, grammar.labelSize);
+	// The following line counts the total no of initial unique edge.
+	uint initialEdgeCount = countEdge(hashset, num_nodes, grammar.labelSize);
+	// std::cout << "#Intital Unique Edge Count:\t" << initialEdgeCount << std::endl
 
-	cout << "Done!\n";
+	std::cout << "Initialization Done!" << std::endl;
 
-	// currently exclude the initialization time
-
-	atomic<int> newEdgeCounter(0);
 	bool finished;
 	int itr = 0;
-	ull calcCnt = 0;
-	ull calcCnt1 = 0;
-	ull calcCnt2 = 0;
-	ull calcCnt3_left = 0;
-	ull calcCnt3_right = 0;
 
-	double elapsed_seconds_comp = 0.0;
-	double elapsed_seconds_transfer = 0.0;
-
-	finish_proc = std::chrono::system_clock::now();
-	std::chrono::duration<double> elapsed_seconds_proc_one = finish_proc - start_proc_one;
-	std::chrono::duration<double> elapsed_seconds_proc_two = finish_proc - start_proc_two;
-
-
+	cout << "Start Calculations...\n";
 	std::chrono::time_point<std::chrono::system_clock> start, finish;
 	start = std::chrono::system_clock::now();
 
-	// if (debug)
-	// {
-	// 	cout << "[DEBUG]: grammar1 size: " << grammar.grammar1.size() << endl;
-	// }
 	// handle epsilon rules: add an edge to itself
-	// grammar1 is for epsilon rules A --> e
-	// grammar2 is for one symbol on RHS A --> B
-	// grammar3 is for two symbols on RHS A --> BC
 	for (uint l = 0; l < grammar.grammar1.size(); l++)
 	{
 		for (uint i = 0; i < num_nodes; i++)
 		{
-			calcCnt++;
 			// check if the new edge based on an epsilon grammar rule exists or not. l: grammar ID, 0: LHS
 			if (hashset[i][grammar.grammar1[l][0]].find(i) == hashset[i][grammar.grammar1[l][0]].end())
 			{
-				// insert into hashset
 				hashset[i][grammar.grammar1[l][0]].insert(i);
-				// insert into the graph
+
 				edgeVecs[grammar.grammar1[l][0]][i].push_back(i);
 				inEdgeVecs[grammar.grammar1[l][0]][i].push_back(i);
 
 				activeQueue.push(EdgeForReading(i, i, grammar.grammar1[l][0]));
-
-				newEdgeCounter++;
 			}
 		}
 	}
 
-	cout << "********************\n";
-
 	do
 	{
 		itr++;
-
-        cout << "Iteration " << itr << endl;
-		// std::chrono::time_point<std::chrono::system_clock> startC, finishC;
-		// startC = std::chrono::system_clock::now();
+		cout << "Iteration " << itr << endl;
 
 		while (!activeQueue.empty())
 		{
 			EdgeForReading currEdge = activeQueue.front();
 			activeQueue.pop();
 
-			// for each grammar rule like A --> B
+			// for each grammar rule like, A = B
 			for (uint g = 0; g < grammar.grammar2index[currEdge.label].size(); g++)
 			{
-				calcCnt++;
-				// calcCnt2++;
 				uint leftLabel = grammar.grammar2index[currEdge.label][g];
-				// if the edge to the neighbor is labeled with B
 				if (hashset[currEdge.from][leftLabel].find(currEdge.to) == hashset[currEdge.from][leftLabel].end())
 				{
 					hashset[currEdge.from][leftLabel].insert(currEdge.to);
-
-					// the new edge is added to FUTURE list, due to potential conflicts in parallel version
-					// if topo-driven is run in serial, only OLD and NEW are needed.
-					// Graspan did not mention FUTURE list, but it puts the new edges into a seperate list, which
-					// is similar to FUTURE list's purpose.
-					// for data-driven, we only need one list (no NEW OLD FUTURE)
-
+					// The generated edge is added to FUTURE list
 					futureQueue.push(EdgeForReading(currEdge.from, currEdge.to, grammar.grammar2index[currEdge.label][g]));
-
-					// newEdgeCounter++;
 				}
 			}
 
-			// SF: start
-			// A = BC
+			// for each grammar rule like, A = BC
 			for (uint g = 0; g < grammar.grammar3indexLeft[currEdge.label].size(); g++)
 			{
 				uint B = currEdge.label;
@@ -276,24 +202,17 @@ int main(int argc, char **argv)
 				for (uint j = 0; j < edgeVecs[C][currEdge.to].size(); j++)
 				{
 					uint nbr;
-
-					// A = BC, B = grammar.grammar3[g][1] = currEdge.label
-					// NEW outgoing edges of currEdge.to
 					nbr = edgeVecs[C][currEdge.to][j];
-					// A = BC, C = grammar.grammar3[g][2]
-					calcCnt++;
-					// calcCnt3_left++;
 
 					if (hashset[currEdge.from][A].find(nbr) == hashset[currEdge.from][A].end())
 					{
 						hashset[currEdge.from][A].insert(nbr);
 						futureQueue.push(EdgeForReading(currEdge.from, nbr, A));
-						// newEdgeCounter++;
 					}
 				}
 			}
 
-			// A = CB, B = grammar.grammar3[g][2] = currEdge.label
+			// for each grammar rule like, A = CB
 			for (uint g = 0; g < grammar.grammar3indexRight[currEdge.label].size(); g++)
 			{
 				uint B = currEdge.label;
@@ -304,26 +223,22 @@ int main(int argc, char **argv)
 				{
 					uint inNbr;
 					inNbr = inEdgeVecs[C][currEdge.from][h];
-					// A = CB, C = grammar.grammar3[g][1]
-					calcCnt++;
-					// calcCnt3_right++;
 
 					if (hashset[inNbr][A].find(currEdge.to) == hashset[inNbr][A].end())
 					{
 						hashset[inNbr][A].insert(currEdge.to);
 						futureQueue.push(EdgeForReading(inNbr, currEdge.to, A));
-						// newEdgeCounter++;
 					}
 				}
 			}
 		}
 
-		finished = true;
+		// std::cout << "#Generated edge in this itreation:\t" << futureQueue.size() << std::endl;
 
+		finished = true;
 		queue<EdgeForReading> tempQueue = futureQueue;
 
-        cout << "New Edge: " << futureQueue.size() << endl;
-
+		// Add the FUTURE edges to the adjacency lists
 		while (!tempQueue.empty())
 		{
 			EdgeForReading edge = tempQueue.front();
@@ -333,28 +248,43 @@ int main(int argc, char **argv)
 			inEdgeVecs[edge.label][edge.to].push_back(edge.from);
 		}
 
+		// Check if fixed-point is reached
 		if (!futureQueue.empty())
+		{
 			finished = false;
+		}
+
 		swap(activeQueue, futureQueue);
 	} while (!finished);
 
+	// Get the calculation time
 	finish = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = finish - start;
 	std::time_t finish_time = std::chrono::system_clock::to_time_t(finish);
 
-//	uint totalNewEdgeCount = countEdge(hashset, num_nodes, grammar.labelSize) - initialEdgeCount;
-    writeOutputs(PARTITIONS_DIR_PATH, "httpd", hashset);
+	std::cout << "Calculation Done!" << std::endl;
+	uint totalNewEdgeCount = countEdge(hashset, num_nodes, grammar.labelSize) - initialEdgeCount;
+	// Write output to a file
+	// writeOutputs(OUTPUT_FILE_PATH, hashset);
 
-	cout << "**************************" << endl;
-	std::cout << "# Total time = " << elapsed_seconds.count() << std::endl;
-	std::cout << "# Preproc time with file read: " << elapsed_seconds_proc_one.count() << std::endl;
-	std::cout << "# Preproc time without file read: " << elapsed_seconds_proc_two.count() << std::endl;
-	std::cout << "# Total iterations = " << itr << endl;
+	std::cout << "----------RESULTS----------" << std::endl;
+	std::cout << "Graph File: " << inputGraph << std::endl;
+	std::cout << "--------------------------" << std::endl;
+	std::cout << "# Total Calculation Time =\t" << elapsed_seconds.count() << std::endl;
+	std::cout << "# Total NEW Edge Created =\t" << totalNewEdgeCount << std::endl;
+	std::cout << "# Total Iterations =\t" << itr << std::endl;
 
-//	cout << "SF:: # Number of new edges: " << totalNewEdgeCount << endl;
-	cout << "AM:: # Number of new edges: " << newEdgeCounter << endl;
-
-	cout << "# Iterations: " << itr << endl;
-	cout << "# Total Calculations: " << calcCnt << endl;
+	// Get memory usage: comment this if not needed
 	getPeakMemoryUsage();
+	std::cout << "--------------------------" << std::endl;
+	std::cout << "------------END-----------" << std::endl;
+
+	// Delete dynamically alloted memories
+	for (uint i = 0; i < grammar.labelSize; i++)
+	{
+		delete[] edgeVecs[i];	// Delete the array of vectors
+		delete[] inEdgeVecs[i]; // Delete the array of vectors
+	}
+	delete[] edgeVecs; // Delete the array of pointers
+	delete[] inEdgeVecs;
 }

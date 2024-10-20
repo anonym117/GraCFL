@@ -28,7 +28,6 @@
 #include <algorithm>
 #include <stdint.h>
 
-
 using namespace std;
 
 typedef unsigned int uint;
@@ -67,16 +66,16 @@ struct Edge
 // SF:: Keeps the source, destination vertex and label of an edge
 // For label the original label string is not saved. Instead the value from
 // hashSym map is saved, hashMap[label] = value;
-struct EdgeForReading2
+struct EdgeForReading
 {
   uint from;
   uint to;
   uint label;
   uint contextID;
 
-  EdgeForReading2() {}
+  EdgeForReading() {}
 
-  EdgeForReading2(uint from, uint to, uint label, int contextID)
+  EdgeForReading(uint from, uint to, uint label, int contextID)
   {
     this->from = from;
     this->to = to;
@@ -85,15 +84,15 @@ struct EdgeForReading2
   }
 };
 
-struct EdgeForReading
+struct EdgeForReading2
 {
   uint from;
   uint to;
   uint label;
 
-  EdgeForReading() {}
+  EdgeForReading2() {}
 
-  EdgeForReading(uint from, uint to, uint label)
+  EdgeForReading2(uint from, uint to, uint label)
   {
     this->from = from;
     this->to = to;
@@ -158,8 +157,6 @@ ull countEdge(vector<vector<unordered_set<ull>>> &hashset, uint hashsetSize, uin
   }
   return size;
 }
-
-
 
 // holds the OLD, NEW, FUTURE edges
 struct Buffer2
@@ -271,5 +268,43 @@ bool hasEnding(std::string const &baseStr, std::string const &endStr)
   }
 }
 
+void getPeakMemoryUsage()
+{
+	std::string line;
+	std::ifstream statusFile("/proc/self/status");
+
+	while (getline(statusFile, line))
+	{
+		if (line.substr(0, 7) == "VmPeak:")
+		{
+			long memoryKb;
+			std::istringstream iss(line.substr(7));
+			iss >> memoryKb;
+			double memGB = memoryKb / (1024.0 * 1024.0);
+			std::cout << "# Peak Virtual Memory Usage =\t" << memoryKb << " KB" << std::endl;
+			std::cout << "# Peak Virtual Memory Usage (in GB) =\t" << memGB << " GB" << std::endl;
+		}
+
+		if (line.substr(0, 6) == "VmHWM:")
+		{
+			long memoryKb;
+			std::istringstream iss(line.substr(6));
+			iss >> memoryKb;
+			double memGB = memoryKb / (1024.0 * 1024.0);
+			std::cout << "# Peak Physical  Memory Usage =\t" << memoryKb << " KB" << std::endl;
+			std::cout << "# Peak Physical Memory Usage (in GB) =\t" << memGB << " GB" << std::endl;
+		}
+
+		if (line.substr(0, 6) == "VmRSS:")
+		{
+			long memoryKb;
+			std::istringstream iss(line.substr(6));
+			iss >> memoryKb;
+			double memGB = memoryKb / (1024.0 * 1024.0);
+			std::cout << "# VmRSS  Memory Usage =\t" << memoryKb << " KB" << std::endl;
+			std::cout << "# VmRSS Memory Usage (in GB) =\t" << memGB << " GB" << std::endl;
+		}
+	}
+}
 
 #endif

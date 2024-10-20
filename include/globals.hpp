@@ -172,4 +172,43 @@ enum Color
 	BLACK
 };
 
+void getPeakMemoryUsage()
+{
+	std::string line;
+	std::ifstream statusFile("/proc/self/status");
+
+	while (getline(statusFile, line))
+	{
+		if (line.substr(0, 7) == "VmPeak:")
+		{
+			long memoryKb;
+			std::istringstream iss(line.substr(7));
+			iss >> memoryKb;
+			double memGB = memoryKb / (1024.0 * 1024.0);
+			std::cout << "# Peak Virtual Memory Usage =\t" << memoryKb << " KB" << std::endl;
+			std::cout << "# Peak Virtual Memory Usage (in GB) =\t" << memGB << " GB" << std::endl;
+		}
+
+		if (line.substr(0, 6) == "VmHWM:")
+		{
+			long memoryKb;
+			std::istringstream iss(line.substr(6));
+			iss >> memoryKb;
+			double memGB = memoryKb / (1024.0 * 1024.0);
+			std::cout << "# Peak Physical  Memory Usage =\t" << memoryKb << " KB" << std::endl;
+			std::cout << "# Peak Physical Memory Usage (in GB) =\t" << memGB << " GB" << std::endl;
+		}
+
+		if (line.substr(0, 6) == "VmRSS:")
+		{
+			long memoryKb;
+			std::istringstream iss(line.substr(6));
+			iss >> memoryKb;
+			double memGB = memoryKb / (1024.0 * 1024.0);
+			std::cout << "# VmRSS  Memory Usage =\t" << memoryKb << " KB" << std::endl;
+			std::cout << "# VmRSS Memory Usage (in GB) =\t" << memGB << " GB" << std::endl;
+		}
+	}
+}
+
 #endif
