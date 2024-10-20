@@ -6,52 +6,52 @@
 class Grammar
 {
 public:
-	string grammarFilePath;
+	std::string grammarFilePath;
 	// level-1: rule-ID, level-2: LHS [0]
-	vector<vector<uint>> grammar1;
+	std::vector<std::vector<uint>> grammar1;
 	// level-1: rule-ID, level-2: LHS [0], RHS [1]
-	vector<vector<uint>> grammar2;
+	std::vector<std::vector<uint>> grammar2;
 	// SF:: Let's say A --> BC is the grammar rule.
 	// Then first level of the 2D list will be the number when it's found among it's kind. If we have seen this kind of
 	// rule before once then it's index will be 2. Second index will be the grammar rules.
 	// For example grammar3[3][0] = A, grammar3[3][1] = B, grammar3[3][2] = C
 	// level-1: rule-ID, level-2: LHS [0], RHS-1 [1], RHS-2 [2]
-	vector<vector<uint>> grammar3;
+	std::vector<std::vector<uint>> grammar3;
 	// index: label (LHS), value: in the grammar or not
-	vector<bool> grammar1index;
+	std::vector<bool> grammar1index;
 	// consider A --> B, index: B, value: all possible As
-	vector<vector<uint>> grammar2index;
+	std::vector<std::vector<uint>> grammar2index;
 	// consider A --> BC, index: BC (B*num_symbols+C), value: all possible As
-	vector<vector<uint>> grammar3index;
+	std::vector<std::vector<uint>> grammar3index;
 	// consider A --> BC, index: B, value: all possible pairs of (A, C)
-	vector<vector<pair<uint, uint>>> grammar3indexLeft;
+	std::vector<std::vector<std::pair<uint, uint>>> grammar3indexLeft;
 	// consider A --> BC, index: C, value: all possible pairs of (A, B)
-	vector<vector<pair<uint, uint>>> grammar3indexRight;
+	std::vector<std::vector<std::pair<uint, uint>>> grammar3indexRight;
 	int labelSize;
-	unordered_map<string, uint> hashSym; // 0 .. labelSize-1
-	unordered_map<uint, string> hashSymRev;
+	std::unordered_map<std::string, uint> hashSym; // 0 .. labelSize-1
+	std::unordered_map<uint, string> hashSymRev;
 	int leftLabelSize;
-	vector<uint> leftLabels;
-	unordered_set<uint> allLabels;
+	std::vector<uint> leftLabels;
+	std::unordered_set<uint> allLabels;
 	// holds the labels that have contextId
 	// value: 0 -> no context
 	// value: 1 -> context
-	vector<uint> contextLabels;
+	std::vector<uint> contextLabels;
 
 	// SF: Reads the grammar file
 
-	Grammar(string grammarFilePath)
+	Grammar(std::string grammarFilePath)
 	{
 		this->grammarFilePath = grammarFilePath;
-		ifstream grammarFile;
+		std::ifstream grammarFile;
 		grammarFile.open(grammarFilePath);
 
-		string line;
-		string symbol;
+		std::string line;
+		std::string symbol;
 		int numSym;
-		vector<uint> symbols;
+		std::vector<uint> symbols;
 
-		stringstream ss;
+		std::stringstream ss;
 		labelSize = 0;
 		while (getline(grammarFile, line))
 		{
@@ -80,7 +80,7 @@ public:
 				grammar3.push_back(symbols);
 			else
 			{
-				cout << "An error happened during parsing the grammar!\n";
+				std::cout << "An error happened during parsing the grammar!\n";
 				exit(0);
 			}
 		}
@@ -118,7 +118,7 @@ public:
 		for (int i = 0; i < grammar3.size(); i++)
 			grammar3indexRight[grammar3[i][2]].push_back(make_pair(grammar3[i][1], grammar3[i][0]));
 
-		unordered_set<uint> leftSym;
+		std::unordered_set<uint> leftSym;
 		for (int i = 0; i < grammar2.size(); i++)
 			leftSym.insert(grammar2[i][0]);
 		for (int i = 0; i < grammar3.size(); i++)
@@ -130,17 +130,17 @@ public:
 		}
 		leftLabelSize = leftLabels.size();
 
-		cout << "Left Labels:\n";
+		std::cout << "Left Labels:\n";
 		for (int i = 0; i < leftLabelSize; i++)
-			cout << hashSymRev[leftLabels[i]] << " ";
-		cout << endl;
-		cout << " AllLabelSize: " << labelSize << " :--->" << endl;
+			std::cout << hashSymRev[leftLabels[i]] << " ";
+		std::cout << std::endl;
+		std::cout << "Total Label Size: " << labelSize << ", Labels:" << std::endl;
 		for (auto i = allLabels.begin(); i != allLabels.end(); i++)
-			cout << hashSymRev[*i] << " ";
-		cout << endl;
+			std::cout << hashSymRev[*i] << " ";
+		std::cout << endl;
 
 		contextLabels.resize(this->labelSize);
-		string endStr = "_i";
+		std::string endStr = "_i";
 		for (uint i = 0; i < this->labelSize; i++)
 		{
 			if (hasEnding(this->hashSymRev[i], endStr))
@@ -162,22 +162,22 @@ public:
 		return grammar1index[symbol];
 	}
 
-	inline vector<uint> rule2(uint symbol)
+	inline std::vector<uint> rule2(uint symbol)
 	{
 		return grammar2index[symbol];
 	}
 
-	inline vector<uint> rule3(uint symbol1, uint symbol2)
+	inline std::vector<uint> rule3(uint symbol1, uint symbol2)
 	{
 		return grammar3index[symbol1 * this->labelSize + symbol2];
 	}
 
-	inline vector<pair<uint, uint>> rule3left(uint symbol)
+	inline std::vector<std::pair<uint, uint>> rule3left(uint symbol)
 	{
 		return grammar3indexLeft[symbol];
 	}
 
-	inline vector<pair<uint, uint>> rule3right(uint symbol)
+	inline std::vector<std::pair<uint, uint>> rule3right(uint symbol)
 	{
 		return grammar3indexRight[symbol];
 	}

@@ -1,5 +1,5 @@
 #include "globals-bi.hpp"
-#include "grammar-bi.hpp"
+#include "grammar.hpp"
 
 /*
  * E-centric-Basic
