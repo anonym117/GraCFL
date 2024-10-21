@@ -109,14 +109,14 @@ To execute the script:
 
 The benchmark graphs and grammar files used in the research paper are available for download. These files are necessary to reproduce the experiments and results described in the paper. You can download them from the following Google Drive link:
 
-[Download Benchmark Graphs and Grammar Files](https://drive.google.com/your-link-here)
+[Download Benchmark Graphs and Grammar Files](https://drive.google.com/drive/folders/1mLMhuXbj4Eu9xrhFcQs3uH3Lp0lw0iZ8?usp=sharing)
 
 ### How to Use
 
 1. Download the graph and grammar files from the provided Google Drive link.
-2. Place the downloaded files in the appropriate directories:
-   - Graph files should be placed in the `graphs/` directory.
-   - Grammar files should be placed in the `grammar/` directory.
+2. Place the downloaded `graphs_grammars` folder in the `GraCFL` directory:
+   - Graph files are located inside  the `graphs_grammars/graphs/` directory.
+   - Grammar files are located inside the `graphs_grammars/grammars/` directory.
 
 Once the files are in place, you can run the provided scripts (e.g., `run_script_paper.sh` or `run_script_all.sh`) to generate results based on these input files.
 
@@ -129,14 +129,13 @@ Below is the example directory structure of the project:
 GraCFL/
 ├── include/                # Header files
 ├── src/                    # Source files
-├── graphs/                 # Graph input files
-├── grammars/               # Grammar input files
+├── graphs_grammars/        # Graph and Grammar input files
 ├── build/bin/              # Generated executables (after build)
 ├── logs/                   # Log files (generated during runtime)
 ├── CMakeLists.txt          # CMake build configuration
 ├── README.md               # This file
-├── run_script_paper.sh     # Script to automate execution of the executables used in the paper
-└── run_script_all.sh       # Script to automate execution of all executables
+├── run_script_paper.sh     # Script to automate the execution of the executables used in the paper
+└── run_script_all.sh       # Script to automate the execution of all executables
 ```
 
 
