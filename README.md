@@ -5,8 +5,8 @@
 - [Dependencies](#dependencies)
 - [Installation](#installation)
 - [Build Instructions](#build-instructions)
-- [Usage](#usage)
-- [Example](#example)
+- [Run Scripts](#run-scripts)
+- [Benchmark Graphs and Grammar Files](#benchmark)
 - [Example Structure](#example-structure)
 - [Contributing](#contributing)
 - [License](#license)
@@ -71,6 +71,79 @@ To build the project, follow these steps:
    ```bash
    ./<executable_name> <graph_file> <grammar_file>
    ```
+    For parallel executables, run the following command
+   ```bash
+   ./<executable_name> <graph_file> <grammar_file> <no_threads>
+   ```
+   
+    - **`<executable_name>`**: The name of the executable you wish to run (e.g., `e-centric-bi-grammar_driven-parallel`).
+    - **`<graph_file>`**: Path to the input graph file.
+    - **`<grammar_file>`**: Path to the input grammar file.
+    - **`<no_threads>`**: No of threads to run in parallel (only applicable for the parallel executables)
+
+
+## Run Scripts 
+
+The project includes scripts to help automate the process of running the generated executables on specific input files. These scripts are designed to make it easier to reproduce the results used in the related research paper or run all available executables. 
+
+The scripts are located inside the `GraCFL/` directory. Run these scripts only after building the project.
+
+### Running the Executables Used in the Paper
+
+To generate results for the executables that were specifically used in the research paper, you can run the `run_script_paper.sh` file. This script will automatically run the relevant executables with their corresponding input files (graphs and grammar).
+
+To execute the script:
+
+```bash
+./run_script_paper.sh
+```
+### Running All the Executables
+
+You can run the `run_script_all.sh` file to generate results for all the executables. `run_script_all.sh` runs all executables present in the `/build/bin/` directory, even those that were not used in the paper.
+
+To execute the script:
+
+```bash
+./run_script_all.sh
+```
+
+## Benchmark Graphs and Grammar Files
+
+The benchmark graphs and grammar files used in the research paper are available for download. These files are necessary to reproduce the experiments and results described in the paper. You can download them from the following Google Drive link:
+
+[Download Benchmark Graphs and Grammar Files](https://drive.google.com/your-link-here)
+
+### How to Use
+
+1. Download the graph and grammar files from the provided Google Drive link.
+2. Place the downloaded files in the appropriate directories:
+   - Graph files should be placed in the `graphs/` directory.
+   - Grammar files should be placed in the `grammar/` directory.
+
+Once the files are in place, you can run the provided scripts (e.g., `run_script_paper.sh` or `run_script_all.sh`) to generate results based on these input files.
+
+Make sure the directory structure matches the paths used in the scripts to ensure proper execution.
+
+## Example Structure
+
+Below is the example directory structure of the project:
+```
+GraCFL/
+├── include/                # Header files
+├── src/                    # Source files
+├── graphs/                 # Graph input files
+├── grammars/               # Grammar input files
+├── build/bin/              # Generated executables (after build)
+├── logs/                   # Log files (generated during runtime)
+├── CMakeLists.txt          # CMake build configuration
+├── README.md               # This file
+├── run_script_paper.sh     # Script to automate execution of the executables used in the paper
+└── run_script_all.sh       # Script to automate execution of all executables
+```
+
+
+
+
 
 
 
