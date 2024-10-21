@@ -8,6 +8,14 @@ project(MyCppProject)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# Set Release build type by default
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+# Add -O3 optimization flag for Release builds
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+
 # Set the source and include directories
 set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
 set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
@@ -99,6 +107,10 @@ set(TBB_EXECUTABLES
     "v-centric-bi-grammar_driven-label_indexed-parallel"
 )
 
+set(OMP_EXECUTABLES_EXCLUSIVE
+    "v-centric-fw-grammar_driven-label_indexed-parallel"
+)
+
 # Find all .cpp files in the src directory
 file(GLOB CPP_FILES "${SRC_DIR}/*/*.cpp")
 
@@ -133,6 +145,14 @@ foreach(CPP_FILE ${CPP_FILES})
             target_link_libraries(${EXE_NAME} PRIVATE ${TBB_LIB} ${TBB_MALLOC_LIB} ${TBB_MALLOC_PROXY_LIB})  # Link all TBB-related libs from lib64
         endif()
 	# Add OpenMP flags if OpenMP is found
+        if(OpenMP_CXX_FOUND)
+            target_link_libraries(${EXE_NAME} PRIVATE OpenMP::OpenMP_CXX)
+        endif()
+    endif()
+
+    # If the executable is dependent on only OpenMP, link OpenMp library
+    if(${EXE_NAME} IN_LIST OMP_EXECUTABLES_EXCLUSIVE)  # Replace with actual executable name
+        # Add OpenMP flags if OpenMP is found
         if(OpenMP_CXX_FOUND)
             target_link_libraries(${EXE_NAME} PRIVATE OpenMP::OpenMP_CXX)
         endif()
