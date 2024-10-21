@@ -6,7 +6,7 @@
 - [Installation](#installation)
 - [Build Instructions](#build-instructions)
 - [Run Scripts](#run-scripts)
-- [Benchmark Graphs and Grammar Files](#benchmark)
+- [Benchmark Graphs and Grammar Files](#benchmark-graphs-and-grammar-files)
 - [Example Structure](#example-structure)
 
 ## Project Overview
