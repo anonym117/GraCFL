@@ -88,13 +88,16 @@ The scripts are located inside the `GraCFL/` directory. Run these scripts only a
 
 ### Running the Executables Used in the Paper
 
-To generate results for the executables that were specifically used in the research paper, you can run the `run_script_paper.sh` file. This script will automatically run the relevant executables with their corresponding input files (graphs and grammar).
+To generate results for the executables that were specifically used in the research paper, you can run the `run_script_paper_short.sh` and `run_script_paper_long.sh` file. These scripts will automatically run the relevant executables with their corresponding input files (graphs and grammar).
 
-To execute the script:
+To execute the scripts:
 
 ```bash
-./run_script_paper.sh
+sh run_script_paper_short.sh
+sh run_script_paper_long.sh
 ```
+The `run_script_paper_short.sh` runs the executables with a shorter runtime and `run_script_paper_long.sh` runs the executables with a longer runtime from the paper.
+
 ### Running All the Executables
 
 You can run the `run_script_all.sh` file to generate results for all the executables. `run_script_all.sh` runs all executables present in the `/build/bin/` directory, even those that were not used in the paper.
@@ -102,7 +105,7 @@ You can run the `run_script_all.sh` file to generate results for all the executa
 To execute the script:
 
 ```bash
-./run_script_all.sh
+sh run_script_all.sh
 ```
 
 ## Benchmark Graphs and Grammar Files
