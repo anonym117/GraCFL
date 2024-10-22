@@ -1,22 +1,16 @@
-// #include <cilk/cilk.h>
-// #include <cilk/cilk_api.h>
-
 #include "globals.hpp"
 #include "grammar.hpp"
 
 /***
- * V-centric (bi, temporal ptrs, grammar driven) - the real one
+ * V-centric (bi, sliding ptrs, grammar driven)
  * adjacency list: first level: grammar label, second level: vertex
  * Bi directional traversing of the Graph (incoming and outgoing edges)
- * One BufferEdge list instead of three for OLD, NEW, and FUTURE edges
- * BufferEdge struct (adjcency list is made with this struct) holds the pointes for the OLD, NEW, and FUTURE edges in the single BufferEdge list
+ * Three BufferEdge lists for OLD, NEW, and FUTURE edges
  * Check the Future edge flag whenever an edge is created
- * Grammar index
  */
 
 int main(int argc, char **argv)
 {
-
     // Get the graph file path and grammar file path from command line argument: output file path is optional
 	if (argc == 1)
 	{
@@ -81,24 +75,16 @@ int main(int argc, char **argv)
 	std::cout << "# Initial Edge Count:\t" << num_edges << std::endl;
 	std::cout << "Start initializing the lists, hashset and worklists ..." << std::endl;
 
-    // level-1: vertex ID, level 2:  grammar labels level-3: NEW, OLD, FUTURE pointers and incoming edges
-    vector<vector<BufferEdge>> inEdgeVecs(grammar.labelSize, vector<BufferEdge>(num_nodes));
-    // level-1: vertex ID, level-2: NEW, OLD, FUTURE pointers and outgoing edges
-    vector<vector<BufferEdge>> edgeVecs(grammar.labelSize, vector<BufferEdge>(num_nodes));
-
+    // level-1: labelID, level 2: nodeID, level-3: NEW, OLD, FUTURE vecs, level-4: and incoming edges
+    vector<vector<vector<vector<uint>>>> inEdgeVecs(grammar.labelSize, vector<vector<vector<uint>>>(num_nodes, vector<vector<uint>>(3, vector<uint>())));
+    // level-1: labelID, level 2: nodeID, level-3: NEW, OLD, FUTURE vecs, level-4: and outgoing edges
+    vector<vector<vector<vector<uint>>>> edgeVecs(grammar.labelSize, vector<vector<vector<uint>>>(num_nodes, vector<vector<uint>>(3, vector<uint>())));
     vector<vector<unordered_set<ull>>> hashset(num_nodes, vector<unordered_set<ull>>(grammar.labelSize, unordered_set<ull>()));
-    // hashset for incoming edges
-    // unordered_set<ull> *inHashset = new unordered_set<ull>[num_nodes];
 
     for (uint i = 0; i < num_edges; i++)
     {
-        edgeVecs[edges[i].label][edges[i].from].vertexList.push_back(edges[i].to);
-        inEdgeVecs[edges[i].label][edges[i].to].vertexList.push_back(edges[i].from);
-
-        // update the BufferEdge pointers
-        edgeVecs[edges[i].label][edges[i].from].NEW_END++;
-        inEdgeVecs[edges[i].label][edges[i].to].NEW_END++;
-
+        edgeVecs[edges[i].label][edges[i].from][NEW].push_back(edges[i].to);
+        inEdgeVecs[edges[i].label][edges[i].to][NEW].push_back(edges[i].from);
         // insert edge into the hashset
         hashset[edges[i].from][edges[i].label].insert(edges[i].to);
     }
@@ -114,8 +100,6 @@ int main(int argc, char **argv)
 	int itr = 0; // Iteration counter for fixed-point iteration
 
 	std::cout << "Start Calculations...\n";
-
-    // currently exclude the initialization time
     std::chrono::time_point<std::chrono::steady_clock> start, finish;
     start = std::chrono::steady_clock::now();
 
@@ -130,11 +114,8 @@ int main(int argc, char **argv)
                 // insert edge into hashset
                 hashset[i][grammar.grammar1[l][0]].insert(i);
                 // insert edge into the graph
-                edgeVecs[grammar.grammar1[l][0]][i].vertexList.push_back(i);
-                inEdgeVecs[grammar.grammar1[l][0]][i].vertexList.push_back(i);
-                // update the sliding/temporal pointers
-                edgeVecs[grammar.grammar1[l][0]][i].NEW_END++;
-                inEdgeVecs[grammar.grammar1[l][0]][i].NEW_END++;
+                edgeVecs[grammar.grammar1[l][0]][i][NEW].push_back(i);
+                inEdgeVecs[grammar.grammar1[l][0]][i][NEW].push_back(i);
             }
         }
     }
@@ -153,17 +134,18 @@ int main(int argc, char **argv)
             {
                 uint nbr;
                 //  the valid index range is [START_NEW, END_NEW-1]
-                uint START_NEW = inEdgeVecs[g][i].OLD_END;
-                uint END_NEW = inEdgeVecs[g][i].NEW_END;
+                uint START_NEW = 0;
+                uint END_NEW = inEdgeVecs[g][i][NEW].size();
 
                 // for each new edge
                 for (uint j = START_NEW; j < END_NEW; j++)
                 {
-                    uint inNbr = inEdgeVecs[g][i].vertexList[j];
+                    uint inNbr = inEdgeVecs[g][i][NEW][j];
                     // rule: A = B
                     uint g2Size = grammar.grammar2index[g].size();
                     for (uint m = 0; m < g2Size; m++)
                     {
+                        // calcCnt++;
                         uint A = grammar.grammar2index[g][m];
 
                         if (hashset[inNbr][A].find(i) == hashset[inNbr][A].end())
@@ -171,11 +153,11 @@ int main(int argc, char **argv)
                             finished = false;
                             hashset[inNbr][A].insert(i);
 
-                            edgeVecs[A][inNbr].vertexList.push_back(i);
-                            inEdgeVecs[A][i].vertexList.push_back(inNbr);
+                            edgeVecs[A][inNbr][FUTURE].push_back(i);
+                            inEdgeVecs[A][i][FUTURE].push_back(inNbr);
 
                             // No need to update the pointers. Because the FUTURE_START starts from the
-                            // NEW_END, and NEW_END is already updated.
+                            // NEW_END, and NEW_END is already updated
                         }
                     }
 
@@ -186,32 +168,50 @@ int main(int argc, char **argv)
                         uint C = grammar.grammar3indexLeft[g][m].first;
                         uint A = grammar.grammar3indexLeft[g][m].second;
 
-                        uint START_OLD_OUT = 0;
-                        uint END_NEW_OUT = edgeVecs[C][i].NEW_END;
+                        uint START_NEW_OUT = 0;
+                        uint END_NEW_OUT = edgeVecs[C][i][NEW].size();
 
-                        for (uint h = START_OLD_OUT; h < END_NEW_OUT; h++)
+                        // new * new
+                        for (uint h = START_NEW_OUT; h < END_NEW_OUT; h++)
                         {
-                            uint nbr = edgeVecs[C][i].vertexList[h];
+                            uint nbr = edgeVecs[C][i][NEW][h];
                             if (hashset[inNbr][A].find(nbr) == hashset[inNbr][A].end())
                             {
                                 finished = false;
                                 hashset[inNbr][A].insert(nbr);
-                                edgeVecs[A][inNbr].vertexList.push_back(nbr);
-                                inEdgeVecs[A][nbr].vertexList.push_back(inNbr);
+                                edgeVecs[A][inNbr][FUTURE].push_back(nbr);
+                                inEdgeVecs[A][nbr][FUTURE].push_back(inNbr);
                             }
                         }
+
+                        // new * old
+                        uint START_OLD_OUT = 0;
+                        uint END_OLD_OUT = edgeVecs[C][i][OLD].size();
+
+                        for (uint h = START_OLD_OUT; h < END_OLD_OUT; h++)
+                        {
+                            uint nbr = edgeVecs[C][i][OLD][h];
+                            if (hashset[inNbr][A].find(nbr) == hashset[inNbr][A].end())
+                            {
+                                finished = false;
+                                hashset[inNbr][A].insert(nbr);
+                                edgeVecs[A][inNbr][FUTURE].push_back(nbr);
+                                inEdgeVecs[A][nbr][FUTURE].push_back(inNbr);
+                            }
+                        }
+
                     }
                 }
 
                 // rule: A = CB
-                // C (old + new) * B (new)
+                // C (old) * B (new)
                 // all the OLD, and NEW outgoing edges of the first edge
-                uint START_NEW_OUT = edgeVecs[g][i].OLD_END;
-                uint END_NEW_OUT = edgeVecs[g][i].NEW_END;
+                uint START_NEW_OUT = 0;
+                uint END_NEW_OUT = edgeVecs[g][i][NEW].size();
 
                 for (uint j = START_NEW_OUT; j < END_NEW_OUT; j++)
                 {   
-                    uint nbr = edgeVecs[g][i].vertexList[j];
+                    uint nbr = edgeVecs[g][i][NEW][j];
                     uint g3SizeRight = grammar.grammar3indexRight[g].size();
 
                     for (uint m = 0; m < g3SizeRight; m++)
@@ -220,19 +220,20 @@ int main(int argc, char **argv)
                         uint A = grammar.grammar3indexRight[g][m].second;
 
                         uint START_OLD_IN = 0;
-                        uint END_OLD_IN = inEdgeVecs[C][i].OLD_END;
+                        uint END_OLD_IN = inEdgeVecs[C][i][OLD].size();
 
                         for (uint h = START_OLD_IN; h < END_OLD_IN; h++)
                         {
-                            uint inNbr = inEdgeVecs[C][i].vertexList[h];
+                            uint inNbr = inEdgeVecs[C][i][OLD][h];
 
+                            // calcCnt++;
                             if (hashset[inNbr][A].find(nbr) == hashset[inNbr][A].end())
                             {
                                 finished = false;
                                 hashset[inNbr][A].insert(nbr);
 
-                                edgeVecs[A][inNbr].vertexList.push_back(nbr);
-                                inEdgeVecs[A][nbr].vertexList.push_back(inNbr);
+                                edgeVecs[A][inNbr][FUTURE].push_back(nbr);
+                                inEdgeVecs[A][nbr][FUTURE].push_back(inNbr);
                             }
                         }
                     }
@@ -246,11 +247,14 @@ int main(int argc, char **argv)
             // update the sliding/temporal pointers
             for (int i = 0; i < num_nodes; i++)
             {
-                edgeVecs[g][i].OLD_END = edgeVecs[g][i].NEW_END;
-                inEdgeVecs[g][i].OLD_END = inEdgeVecs[g][i].NEW_END;
+                edgeVecs[g][i][OLD].insert(edgeVecs[g][i][OLD].begin(), edgeVecs[g][i][NEW].begin(), edgeVecs[g][i][NEW].end());
+                inEdgeVecs[g][i][OLD].insert(inEdgeVecs[g][i][OLD].begin(), inEdgeVecs[g][i][NEW].begin(), inEdgeVecs[g][i][NEW].end());
 
-                edgeVecs[g][i].NEW_END = edgeVecs[g][i].vertexList.size();
-                inEdgeVecs[g][i].NEW_END = inEdgeVecs[g][i].vertexList.size();
+                edgeVecs[g][i][NEW] = edgeVecs[g][i][FUTURE];
+                inEdgeVecs[g][i][NEW] = inEdgeVecs[g][i][FUTURE];
+
+                edgeVecs[g][i][FUTURE].clear();
+                inEdgeVecs[g][i][FUTURE].clear();
             }
         }
     } while (!finished);

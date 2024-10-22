@@ -1,14 +1,19 @@
 #!/bin/bash
 
+### This script runs the executables that take a longer time to generate results as presented in the paper.
+### It includes executables with extended runtimes, which are not covered by the shorter run time script.
+### For results from the faster executables, please use the run_script_paper_short.sh script.
+
 # Set the paths for the executables and graphs directories, and grammar files
 BIN_DIR="./build/bin"
 GRAPH_DIR="./graphs_grammars/graphs"
 GRAPHS_DIR_DATAFLOW="$GRAPH_DIR/dataflow"
 GRAPHS_DIR_POINTSTO="$GRAPH_DIR/pointsto"
 GRAPHS_DIR_JAVA_POINTSTO="$GRAPH_DIR/java_pointsto"
-GRAMMAR_FILE_DATAFLOW="./graphs_grammars/grammars/rules_dataflow.txt"
-GRAMMAR_FILE_POINTSTO="./graphs_grammars/grammars/rules_pointsto.txt"
-GRAMMAR_FILE_JAVA_POINTSTO="./graphs_grammars/grammars/rules_java_pointsto.txt"
+GRAMMAR_DIR="./graphs_grammars/grammars"
+GRAMMAR_FILE_DATAFLOW="$GRAMMAR_DIR/rules_dataflow.txt"
+GRAMMAR_FILE_POINTSTO="$GRAMMAR_DIR/rules_pointsto.txt"
+GRAMMAR_FILE_JAVA_POINTSTO="$GRAMMAR_DIR/rules_java_pointsto.txt"
 
 LOG_DIR="./logs/"  # Directory to store logs
 
@@ -17,14 +22,20 @@ mkdir -p "$LOG_DIR"
 
 # Get the current date and time for the log file name
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
-LOG_FILE="$LOG_DIR/results_all_executables_$TIMESTAMP.log"  # Log file with date and time
+LOG_FILE="$LOG_DIR/results_paper_long_executables_$TIMESTAMP.log"  # Log file with date and time
 
 # Clear or create the log file
-echo "Log file for execution runs for all executables" > "$LOG_FILE"
+echo "Log file for execution runs mentioned in the paper (short)" > "$LOG_FILE"
 echo "Run started at $(date)" >> "$LOG_FILE"
 echo "***********************************************************" >> "$LOG_FILE"
 echo "***********************************************************" >> "$LOG_FILE"
 echo "" >> "$LOG_FILE"
+
+# List of executables to run (add the names of the executables you want to run from the BIN_DIR)
+EXECUTABLES_TO_RUN=( 
+ "e-centric-bi-topo_driven-rule_lookup" 
+ "v-centric-bi-topo_driven-sliding_ptrs-rule_lookup"
+ )
 
 # Function to process graphs and grammar
 run_executables() {
@@ -41,26 +52,28 @@ run_executables() {
     return
   fi
 
-  for executable in "$BIN_DIR"/*; do
+  for executable_name in "${EXECUTABLES_TO_RUN[@]}"; do
+    executable="$BIN_DIR/$executable_name"
+
     if [ -x "$executable" ]; then  # Check if the file is executable
       for graph in "$GRAPHS_DIR"/*; do
-         echo "-----------------------------------------------------------" 
-        echo -e "Executable:\t$executable" 
-        echo -e "Graph:\t$graph" 
-        echo -e "Grammar:\t$GRAMMAR_FILE" 
+        echo "-----------------------------------------------------------"
+        echo -e "Executable:\t$executable"
+        echo -e "Graph:\t$graph"
+        echo -e "Grammar:\t$GRAMMAR_FILE"
 
         # Run the executable with the graph and grammar file and log the output
-        echo -e "Running command:\t$executable $graph $GRAMMAR_FILE" 
+        echo -e "Running command:\t$executable $graph $GRAMMAR_FILE" | tee -a "$LOG_FILE"
         "$executable" "$graph" "$GRAMMAR_FILE" >> "$LOG_FILE" 2>&1
 
         # Capture exit status
         if [ $? -ne 0 ]; then
-          echo "Error: $executable failed with graph $graph and grammar $GRAMMAR_FILE." 
+          echo "Error: $executable failed with graph $graph and grammar $GRAMMAR_FILE." | tee -a "$LOG_FILE"
         else
-          echo "$executable ran successfully with graph $graph and grammar $GRAMMAR_FILE." 
+          echo "$executable ran successfully with graph $graph and grammar $GRAMMAR_FILE." | tee -a "$LOG_FILE"
         fi
 
-         echo "-----------------------------------------------------------" | tee -a "$LOG_FILE"
+        echo "-----------------------------------------------------------"
         echo "" | tee -a "$LOG_FILE"
       done
     else
