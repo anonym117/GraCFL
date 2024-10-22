@@ -1,7 +1,3 @@
-data-driven
-topo-driven
-ooc
-run_singularity
 log*
 logs/
 SBATCH*
@@ -13,3 +9,5 @@ inter*
 build/*
 *log*
 *vscode*
+graphs_grammars
+*.txt

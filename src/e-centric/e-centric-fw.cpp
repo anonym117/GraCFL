@@ -27,6 +27,9 @@ int main(int argc, char **argv)
     std::cout << "-----------START----------" << std::endl;
     std::cout << "--------------------------" << std::endl;
 
+    const std::string executableName = argv[0];
+	std::cout << "ExecutableName:\t" << executableName << endl;
+
     const std::string inputGraph = argv[1];
     std::cout << "GraphFile:\t" << inputGraph << std::endl;
 

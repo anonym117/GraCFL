@@ -28,6 +28,9 @@ int main(int argc, char **argv)
 	std::cout << "-----------START----------" << std::endl;
 	std::cout << "--------------------------" << std::endl;
 
+	const std::string executableName = argv[0];
+	std::cout << "ExecutableName:\t" << executableName << endl;
+
 	const std::string inputGraph = argv[1];
 	std::cout << "GraphFile:\t" << inputGraph << std::endl;
 
@@ -41,7 +44,7 @@ int main(int argc, char **argv)
 		TOTAL_THREADS = stoi(argv[3]);
 	}
 
-	std::cout << "No of Threads:\t" << TOTAL_THREADS << std::endl; 
+	std::cout << "NoOfThreads:\t" << TOTAL_THREADS << std::endl; 
 	std::cout << "--------------------------" << std::endl;
 
 	Grammar grammar(grammarFilePath); // Read grammar

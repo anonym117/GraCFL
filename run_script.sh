@@ -1,18 +1,23 @@
 #!/bin/bash
 
-# Set the paths for the executables and graphs directories, and grammar file
+# Set the paths for the executables and graphs directories, and grammar files
 BIN_DIR="./build/bin"
-GRAPH_DIR="$HOME/graspan-research/Graphs/ApacheHttpd2.2.18Dataflow/"
-GRAMMAR_FILE="$HOME/graspan-research/GrammarFiles/rules_dataflow"  # The first argument is the grammar file
+GRAPH_DIR="./graphs_grammars/graphs"
+GRAPHS_DIR_DATAFLOW="$GRAPH_DIR/dataflow/"
+GRAPHS_DIR_POINTSTO="$GRAPH_DIR/pointsto/"
+GRAPHS_DIR_JAVA_POINTSTO="$GRAPH_DIR/java_pointsto/"
+GRAMMAR_FILE_DATAFLOW="./graphs_grammars/grammars/rules_dataflow.txt"
+GRAMMAR_FILE_POINTSTO="./graphs_grammars/grammars/rules_pointsto.txt"
+GRAMMAR_FILE_JAVA_POINTSTO="./graphs_grammars/grammars/rules_java_pointsto.txt"
 
-LOG_DIR="./results-log"  # Directory to store logs
+LOG_DIR="./logs/"  # Directory to store logs
 
 # Create the logs directory if it doesn't exist
 mkdir -p "$LOG_DIR"
 
 # Get the current date and time for the log file name
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
-LOG_FILE="$LOG_DIR/run_results_log_$TIMESTAMP.txt"  # Log file with date and time
+LOG_FILE="$LOG_DIR/results_all_executables_$TIMESTAMP.log"  # Log file with date and time
 
 # Clear or create the log file
 echo "Log file for execution runs" > "$LOG_FILE"
@@ -21,55 +26,65 @@ echo "----------------------------------------" >> "$LOG_FILE"
 echo "----------------------------------------" >> "$LOG_FILE"
 echo "" >> "$LOG_FILE"
 
-# Check if directories and grammar file exist
-if [ ! -d "$BIN_DIR" ]; then
-  echo "Error: bin directory not found!" | tee -a "$LOG_FILE"
-  exit 1
-fi
+# Function to process graphs and grammar
+run_executables() {
+  local GRAPHS_DIR=$1
+  local GRAMMAR_FILE=$2
 
-if [ ! -d "$GRAPH_DIR" ]; then
-  echo "Error: graphs directory not found!" | tee -a "$LOG_FILE"
-  exit 1
-fi
-
-if [ ! -f "$GRAMMAR_FILE" ]; then
-  echo "Error: grammar file $GRAMMAR_FILE not found!" | tee -a "$LOG_FILE"
-  exit 1
-fi
-
-# Loop through all executables in the bin directory
-for executable in "$BIN_DIR"/*; do
-  if [ -x "$executable" ]; then  # Check if the file is executable
-    # Print an empty line
-    #echo "" | tee -a "$LOG_FILE"
-
-    echo -e "Executable:\t$executable" | tee -a "$LOG_FILE"
-
-    # Loop through all graph files in the graphs directory
-    for graph in "$GRAPH_DIR"/*; do
-      echo -e "Graph:\t$graph" 
-      echo -e "Grammar:\t$GRAMMAR_FILE" 
-
-      # Run the executable with the graph and grammar file and log the output
-      echo -e "Running command:\t$executable $graph $GRAMMAR_FILE" | tee -a "$LOG_FILE"
-      "$executable" "$graph" "$GRAMMAR_FILE" >> "$LOG_FILE" 2>&1
-
-      # Capture exit status
-      if [ $? -ne 0 ]; then
-        echo "Error: $executable failed with graph $graph and grammar $GRAMMAR_FILE." | tee -a "$LOG_FILE"
-      else
-        echo "$executable ran successfully with graph $graph and grammar $GRAMMAR_FILE." | tee -a "$LOG_FILE"
-      fi
-
-      echo "----------------------------------------" | tee -a "$LOG_FILE"
-
-      # Print an empty line
-      echo "" | tee -a "$LOG_FILE"
-    done
-  else
-    echo "Skipping $executable, not an executable file." | tee -a "$LOG_FILE"
+  if [ ! -d "$GRAPHS_DIR" ]; then
+    echo "Error: graphs directory $GRAPHS_DIR not found!" | tee -a "$LOG_FILE"
+    return
   fi
-done
+
+  if [ ! -f "$GRAMMAR_FILE" ]; then
+    echo "Error: grammar file $GRAMMAR_FILE not found!" | tee -a "$LOG_FILE"
+    return
+  fi
+
+  for executable in "$BIN_DIR"/*; do
+    echo "----------------------------------------" 
+    if [ -x "$executable" ]; then  # Check if the file is executable
+      echo -e "Executable:\t$executable" 
+
+      for graph in "$GRAPHS_DIR"/*; do
+        echo -e "Graph:\t$graph" 
+        echo -e "Grammar:\t$GRAMMAR_FILE" 
+
+        # Run the executable with the graph and grammar file and log the output
+        echo -e "Running command:\t$executable $graph $GRAMMAR_FILE" 
+        "$executable" "$graph" "$GRAMMAR_FILE" >> "$LOG_FILE" 2>&1
+
+        # Capture exit status
+        if [ $? -ne 0 ]; then
+          echo "Error: $executable failed with graph $graph and grammar $GRAMMAR_FILE." 
+        else
+          echo "$executable ran successfully with graph $graph and grammar $GRAMMAR_FILE." 
+        fi
+
+        echo "----------------------------------------" | tee -a "$LOG_FILE"
+        echo "" | tee -a "$LOG_FILE"
+      done
+    else
+      echo "Skipping $executable, not an executable file." | tee -a "$LOG_FILE"
+    fi
+    echo "----------------------------------------" 
+  done
+}
+
+echo "--------------DATAFLOW ANALYSIS STARTED-----------------" | tee -a "$LOG_FILE"
+# Execute for dataflow graphs
+run_executables "$GRAPHS_DIR_DATAFLOW" "$GRAMMAR_FILE_DATAFLOW"
+echo "--------------DATAFLOW ANALYSIS FINISHED----------------" | tee -a "$LOG_FILE"
+
+echo "--------------POINTSTO ANALYSIS STARTED-----------------" | tee -a "$LOG_FILE"
+# Execute for pointsto graphs
+run_executables "$GRAPHS_DIR_POINTSTO" "$GRAMMAR_FILE_POINTSTO"
+echo "--------------POINTSTO ANALYSIS FINISHED-----------------" | tee -a "$LOG_FILE"
+
+echo "--------------JAVA POINTSTO ANALYSIS STARTED-------------" | tee -a "$LOG_FILE"
+# Execute for java_pointsto graphs
+run_executables "$GRAPHS_DIR_JAVA_POINTSTO" "$GRAMMAR_FILE_JAVA_POINTSTO"
+echo "--------------JAVA POINTSTO ANALYSIS FINISHED------------" | tee -a "$LOG_FILE"
 
 # Finalize the log
 echo "Run completed at $(date)" >> "$LOG_FILE"
