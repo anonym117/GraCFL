@@ -3,8 +3,6 @@
 #include "globals-par.hpp"
 #include "grammar.hpp"
 
-#define TOTAL_THREADS 16
-
 /***
  * V-centric (bi, sliding ptrs, grammar driven)
  * adjacency list: first level: grammar label, second level: vertex
@@ -37,8 +35,16 @@ int main(int argc, char **argv)
 
 	std::string grammarFilePath = argv[2];
 	std::cout << "GrammarFile:\t" << grammarFilePath << endl;
-	std::cout << "--------------------------" << std::endl;
+	uint TOTAL_THREADS = 32;
 
+	if (argc == 4)
+	{
+		TOTAL_THREADS = stoi(argv[3]);
+	}
+
+	std::cout << "No of Threads:\t" << TOTAL_THREADS << std::endl; 
+	std::cout << "--------------------------" << std::endl;
+    
 	Grammar grammar(grammarFilePath); // Read grammar
 
     uint num_nodes = 0;

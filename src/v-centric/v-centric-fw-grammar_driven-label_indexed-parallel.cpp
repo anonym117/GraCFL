@@ -2,8 +2,6 @@
 #include "globals.hpp"
 #include "grammar.hpp"
 
-#define TOTAL_THREADS 16
-
 /***
  * V-centric (forward, sliding ptrs, grammar driven) - the real one
  * First Level Index: Edge Labels, Second Level Index: Vertex
@@ -38,6 +36,15 @@ int main(int argc, char **argv)
 
 	std::string grammarFilePath = argv[2];
 	std::cout << "GrammarFile:\t" << grammarFilePath << endl;
+
+	uint TOTAL_THREADS = 32;
+
+	if (argc == 4)
+	{
+		TOTAL_THREADS = stoi(argv[3]);
+	}
+
+	std::cout << "No of Threads:\t" << TOTAL_THREADS << std::endl; 
 	std::cout << "--------------------------" << std::endl;
 
 	Grammar grammar(grammarFilePath); // Read grammar
