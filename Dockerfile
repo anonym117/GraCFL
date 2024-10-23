@@ -25,7 +25,7 @@ RUN apt-get update && \
 
 # Manually install CMake version 3.26 or higher
 # Download and install CMake
-RUN wget https://github.com/Kitware/CMake/releases/download/v3.30.2/cmake-3.30.2-linux-x86_64.sh \
+RUN wget https://github.com/Kitware/CMake/releases/tag/v3.30.2/cmake-3.30.2-linux-x86_64.sh \
     && chmod +x cmake-3.30.2-linux-x86_64.sh \
     && ./cmake-3.30.2-linux-x86_64.sh --skip-license --prefix=/usr/local \
     && rm cmake-3.30.2-linux-x86_64.sh
