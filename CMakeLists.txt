@@ -46,7 +46,7 @@ if(NOT JEMALLOC_LIB)
         jemalloc
         GIT_REPOSITORY https://github.com/jemalloc/jemalloc.git
         GIT_TAG 5.3.0  # Specify the version you want to use
-        CONFIGURE_COMMAND ./autogen.sh --prefix=${CMAKE_BINARY_DIR}/jemalloc_install --with-private-libpthread
+        CONFIGURE_COMMAND ./autogen.sh --prefix=${CMAKE_BINARY_DIR}/jemalloc_install --libdir=${CMAKE_BINARY_DIR}/jemalloc_install/lib --with-private-libpthread
         BUILD_COMMAND make
         INSTALL_COMMAND make install
         BUILD_IN_SOURCE 1
@@ -78,7 +78,7 @@ if(NOT TBB_FOUND)
         tbb
         GIT_REPOSITORY https://github.com/oneapi-src/oneTBB.git
         GIT_TAG v2021.13.0  # Specify the version you want to use
-        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/tbb_install -DTBB_TEST=OFF  # Disable tests
+        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/tbb_install -DCMAKE_INSTALL_LIBDIR=lib -DTBB_TEST=OFF  # Disable tests
         BUILD_COMMAND ${CMAKE_COMMAND} --build . --target install
         INSTALL_COMMAND ""
         BUILD_IN_SOURCE 1
@@ -87,9 +87,9 @@ if(NOT TBB_FOUND)
 
     # Set the path to the built TBB library and include directories (using lib64)
     set(TBB_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/tbb_install/include")
-    set(TBB_LIB "${CMAKE_BINARY_DIR}/tbb_install/lib64/libtbb.so")
-    set(TBB_MALLOC_LIB "${CMAKE_BINARY_DIR}/tbb_install/lib64/libtbbmalloc.so")
-    set(TBB_MALLOC_PROXY_LIB "${CMAKE_BINARY_DIR}/tbb_install/lib64/libtbbmalloc_proxy.so")
+    set(TBB_LIB "${CMAKE_BINARY_DIR}/tbb_install/lib/libtbb.so")
+    set(TBB_MALLOC_LIB "${CMAKE_BINARY_DIR}/tbb_install/lib/libtbbmalloc.so")
+    set(TBB_MALLOC_PROXY_LIB "${CMAKE_BINARY_DIR}/tbb_install/lib/libtbbmalloc_proxy.so")
 
     include_directories(${TBB_INCLUDE_DIRS})
 
