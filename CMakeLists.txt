@@ -87,9 +87,9 @@ if(NOT TBB_FOUND)
 
     # Set the path to the built TBB library and include directories (using lib64)
     set(TBB_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/tbb_install/include")
-    set(TBB_LIB "${CMAKE_BINARY_DIR}/tbb_install/lib/libtbb.so")
-    set(TBB_MALLOC_LIB "${CMAKE_BINARY_DIR}/tbb_install/lib/libtbbmalloc.so")
-    set(TBB_MALLOC_PROXY_LIB "${CMAKE_BINARY_DIR}/tbb_install/lib/libtbbmalloc_proxy.so")
+    set(TBB_LIB "${CMAKE_BINARY_DIR}/tbb_install/lib/libtbb${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    set(TBB_MALLOC_LIB "${CMAKE_BINARY_DIR}/tbb_install/lib/libtbbmalloc${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    set(TBB_MALLOC_PROXY_LIB "${CMAKE_BINARY_DIR}/tbb_install/lib/libtbbmalloc_proxy${CMAKE_SHARED_LIBRARY_SUFFIX}")
 
     include_directories(${TBB_INCLUDE_DIRS})
 
