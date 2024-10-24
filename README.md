@@ -153,7 +153,7 @@ You can run `GraCFL` using the provided Singularity image without needing to bui
 3. Download the `graphs_grammars` directory from the provided link.
 4. Run the following command to start the container:
 ```bash
-   singularity --shell \
+   singularity shell \
    --bind <path_to_graphs_grammars_parent_dir>/graphs_grammars/:/usr/src/mycppproject/graphs_grammars/ \
    --bind <path_to_graphs_grammars_parent_dir>/logs/:/usr/src/mycppproject/logs/ \
    gracfl_amd64_1_0.sif
