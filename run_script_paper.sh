@@ -1,8 +1,6 @@
 #!/bin/bash
 
 ### This script runs a subset of executables to generate results as presented in the paper.
-### Only the executables with a very short runtime are included in this script.
-### For results from executables with longer runtimes, please use the run_script_paper_long.sh script.
 
 # Set the paths for the executables and graphs directories, and grammar files
 BIN_DIR="./build/bin"
@@ -22,10 +20,10 @@ mkdir -p "$LOG_DIR"
 
 # Get the current date and time for the log file name
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
-LOG_FILE="$LOG_DIR/results_paper_short_executables_$TIMESTAMP.log"  # Log file with date and time
+LOG_FILE="$LOG_DIR/results_paper_executables_$TIMESTAMP.log"  # Log file with date and time
 
 # Clear or create the log file
-echo "Log file for execution runs mentioned in the paper (short)" > "$LOG_FILE"
+echo "Log file for execution runs mentioned in the paper" > "$LOG_FILE"
 echo "Run started at $(date)" >> "$LOG_FILE"
 echo "***********************************************************" >> "$LOG_FILE"
 echo "***********************************************************" >> "$LOG_FILE"
@@ -41,6 +39,8 @@ EXECUTABLES_TO_RUN=(
  "v-centric-fw-grammar_driven-label_indexed" 
  "v-centric-bw-grammar_driven-label_indexed" 
  "v-centric-bi-grammar_driven-label_indexed-vec_copy"
+ "e-centric-bi-topo_driven-rule_lookup" 
+ "v-centric-bi-topo_driven-sliding_ptrs-rule_lookup"
  )
 
 # Function to process graphs and grammar
