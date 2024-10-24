@@ -96,6 +96,7 @@ To execute the scripts:
 ```bash
 sh run_script_paper.sh
 ```
+The generated results may differ from those reported in the paper due to variations in your system configuration.
 
 ### Running All the Executables
 
