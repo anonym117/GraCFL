@@ -156,7 +156,7 @@ You can run `GraCFL` using the provided Singularity image without needing to bui
    singularity --shell \
    --bind <path_to_graphs_grammars_parent_dir>/graphs_grammars/:/usr/src/mycppproject/graphs_grammars/ \
    --bind <path_to_graphs_grammars_parent_dir>/logs/:/usr/src/mycppproject/logs/ \
-   gracfl_amd64_1.0
+   gracfl_amd64_1_0.sif
 ```
 Here:
 - `<path_to_graphs_grammars_parent_dir>/graphs_grammars/` should be the path to your `graphs_grammars` directory.
