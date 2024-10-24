@@ -8,6 +8,7 @@
 - [Run Scripts](#run-scripts)
 - [Benchmark Graphs and Grammar Files](#benchmark-graphs-and-grammar-files)
 - [Example Structure](#example-structure)
+- [Run with Singularity](#run-with-singularity)
 
 ## Project Overview
 **GraCFL** is designed for high-performance CFL reachability analysis. The project includes various executables in the `build/bin/` directory that perform CFL reachability computations with different optimizations and parallel strategies.
