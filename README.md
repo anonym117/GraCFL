@@ -15,7 +15,7 @@
 ## Dependencies
 The project depends on the following libraries and tools:
 
-- **CMake** (minimum version 3.10)
+- **CMake** (minimum version 3.26)
 - **C++11 or higher** (supported by the project)
 - **TBB** (Threading Building Blocks)
 - **jemalloc** (for memory allocation)
@@ -88,15 +88,13 @@ The scripts are located inside the `GraCFL/` directory. Run these scripts only a
 
 ### Running the Executables Used in the Paper
 
-To generate results for the executables that were specifically used in the research paper, you can run the `run_script_paper_short.sh` and `run_script_paper_long.sh` file. These scripts will automatically run the relevant executables with their corresponding input files (graphs and grammar).
+To generate results for the executables that were specifically used in the research paper, you can run the `run_script_paper.sh` file. This script will automatically run the relevant executables with their corresponding input files (graphs and grammars - will have to be put in place manually).
 
 To execute the scripts:
 
 ```bash
-sh run_script_paper_short.sh
-sh run_script_paper_long.sh
+sh run_script_paper.sh
 ```
-The `run_script_paper_short.sh` runs the executables with a shorter runtime and `run_script_paper_long.sh` runs the executables with a longer runtime from the paper.
 
 ### Running All the Executables
 
