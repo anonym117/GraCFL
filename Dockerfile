@@ -31,7 +31,7 @@ RUN wget https://cmake.org/files/v3.30/cmake-3.30.0-linux-x86_64.sh \
     && rm cmake-3.30.0-linux-x86_64.sh
 
 # Set up a working directory
-WORKDIR /usr/src/gracfl
+WORKDIR /usr/src/mycppproject
 
 # Copy the entire project to the working directory
 COPY . .
@@ -43,7 +43,7 @@ RUN mkdir -p build && \
     cmake --build .
 
 # Set the path to the executables in the bin directory
-ENV PATH="/usr/src/gracfl/build/bin:$PATH"
+ENV PATH="/usr/src/mycppproject/build/bin:$PATH"
 
 # Define the default command to run when the container starts
 CMD ["/bin/bash"]
