@@ -140,6 +140,37 @@ GraCFL/
 └── run_script_all.sh       # Script to automate the execution of all executables
 ```
 
+## Run with Singularity
+
+You can run `GraCFL` using the provided Singularity image without needing to build it on your machine.
+
+[Download Singularity Image](https://drive.google.com/file/d/12T7fwT2t22akz3yrY8jeu_qkmdsE3mWy/view?usp=sharing) 
+
+### How to Use
+
+1. Download the Singularity image
+2. Make sure you have `singularity` installed on your machine
+3. Download the `graphs_grammars` directory from the provided link.
+4. Run the following command to start the container:
+```bash
+   singularity --shell \
+   --bind <path_to_graphs_grammars_parent_dir>/graphs_grammars/:/usr/src/mycppproject/graphs_grammars/ \
+   --bind <path_to_graphs_grammars_parent_dir>/logs/:/usr/src/logs/ \
+   gracfl_amd64_1.0
+```
+Here:
+- `<path_to_graphs_grammars_parent_dir>/graphs_grammars/` should be the path to your `graphs_grammars` directory.
+- `<path_to_graphs_grammars_parent_dir>/logs/` should be the path to a directory where you want to store the output. Make sure to create this `logs` directory in advance by running:
+```bash 
+   mkdir -p logs
+```
+5. Now run the following commands to run the `run_script_paper.sh` or `run_script_all.sh`
+```bash
+   cd /usr/src/mycppproject/   # Navigate to the working directory
+   ./run_script_paper.sh       # Use this to reproduce the results from the paper
+   ./run_script_all.sh         # Use this to run all methods (including those not covered in the paper)
+```
+6. The output logs will be available inside the `logs` directory you specified.
 
 
 
