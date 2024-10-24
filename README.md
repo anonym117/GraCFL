@@ -144,7 +144,7 @@ GraCFL/
 
 You can run `GraCFL` using the provided Singularity image without needing to build it on your machine.
 
-[Download Singularity Image](https://drive.google.com/file/d/12T7fwT2t22akz3yrY8jeu_qkmdsE3mWy/view?usp=sharing) 
+[Download Singularity Image](https://drive.google.com/file/d/1n9EJr4GsLLwcBRBuU-gkIfkpyyDJwc3N/view?usp=sharing) 
 
 ### How to Use
 
