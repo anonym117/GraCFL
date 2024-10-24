@@ -25,13 +25,13 @@ RUN apt-get update && \
 
 # Manually install CMake version 3.26 or higher
 # Download and install CMake
-RUN wget https://github.com/Kitware/CMake/releases/tag/v3.30.2/cmake-3.30.2-linux-x86_64.sh \
-    && chmod +x cmake-3.30.2-linux-x86_64.sh \
-    && ./cmake-3.30.2-linux-x86_64.sh --skip-license --prefix=/usr/local \
-    && rm cmake-3.30.2-linux-x86_64.sh
+RUN wget https://cmake.org/files/v3.30/cmake-3.30.0-linux-x86_64.sh \
+    && chmod +x cmake-3.30.0-linux-x86_64.sh \
+    && ./cmake-3.30.0-linux-x86_64.sh --skip-license --prefix=/usr/local \
+    && rm cmake-3.30.0-linux-x86_64.sh
 
 # Set up a working directory
-WORKDIR /usr/src/mycppproject
+WORKDIR /usr/src/gracfl
 
 # Copy the entire project to the working directory
 COPY . .
@@ -43,7 +43,7 @@ RUN mkdir -p build && \
     cmake --build .
 
 # Set the path to the executables in the bin directory
-ENV PATH="/usr/src/mycppproject/build/bin:$PATH"
+ENV PATH="/usr/src/gracfl/build/bin:$PATH"
 
 # Define the default command to run when the container starts
 CMD ["/bin/bash"]
